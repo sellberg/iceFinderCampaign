@@ -11,7 +11,7 @@ switch ($1)
 	rsync -av --exclude '.DS_Store' --exclude '.git*' --exclude '*~' . sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi25410/scratch/sellberg/iceFinder/
 	breaksw
 	
-	case analyzeSums_water.py:
-	scp analyzeSums_water.py sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/
+	case analyzeSums-:
+	scp analyzeSums-*.py sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/
 	
 endsw
