@@ -253,8 +253,11 @@ for i in N.arange(len(runs)):
 			f.close()
 		else:
 			print 'file missing: ' + source_dir + run_tag + '/' + run_tag + "-angavg_Q.h5"
+		
+		#change qcal for r0130 with mean energy 9386.198425 eV (detector started moving before run ended) so that it is the same as for r0129 with mean energy 9385.326690 eV
+		if (runs[i][j] == 130):
+			temp_Q_angavg[j] = temp_Q_angavg[j-1]
 	
-
 	
 	#plot temp_angavg
 	fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
