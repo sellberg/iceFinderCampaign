@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# -eq 1 ]
+then
+	mkdir output_$1
+	mv $1_ordered*txt output_$1/
+	echo Done! Ordered intensities stored in output_$1/
+else
+        echo To make run directory: ./makeDir rxxxx
+fi
+

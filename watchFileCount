@@ -1,0 +1,23 @@
+#!/bin/bash
+DATADIR="/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5"
+XTCDIR="/reg/d/psdm/cxi/cxi25410/xtc"
+
+#The first input argument is used to select which of the latest runs to view
+FOLDERS=`ls -d $DATADIR/r*`
+
+for i in $FOLDERS
+do
+	lastModified=`ls -dl $i | awk '{printf("%s %d\n", $6, $7) }'`
+	numAngAvgFiles=`find $i -maxdepth 1 -name "LCLS*angavg.h5" | wc -l`
+	numDiffractionFiles=`find $i -maxdepth 1 -name "LCLS*cspad.h5" | wc -l`
+	if [ $numAngAvgFiles -eq 0 ]
+	then
+		continue
+	fi
+	runnumber=`echo $i | awk '{split($1, names,"/"); print names[9]}'`
+	numXTCfiles=`find $XTCDIR -name *$runnumber*.xtc | wc -l` 
+	totalXTCsize=`du -s $XTCDIR"/"*$runnumber*.xtc | awk '{var+=$1}END{print var/(1024*1024)}'`
+	HITRATE=`cat $i"/log.txt" | awk '/Average hit rate/'`
+	NUMHITS=`cat $i"/log.txt" | awk '/Number of hits/'`
+	echo $runnumber, $lastModified, $numAngAvgFiles angavg-h5 and $numDiffractionFiles diffract-h5 files, $numXTCfiles \($totalXTCsize GB\) xtc files, $HITRATE, $NUMHITS
+done

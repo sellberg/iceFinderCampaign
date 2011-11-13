@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# -eq 1 ]
+then
+	OUTPUT="$1.tgz"
+	INPUT="$1/type*/*.png $1/*.png"
+	tar -zcvvPf $OUTPUT $INPUT
+	mv $OUTPUT $1/
+	cp $1/$OUTPUT upload/.
+	echo Done! Output stored as $1/$OUTPUT !
+else
+	echo To pack PNGs: ./packPNGs output_rxxxx
+fi
+
+
