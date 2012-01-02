@@ -78,7 +78,7 @@ if(os.path.exists(canonicalOrderedHitsFN) and os.path.exists(canonicalOrderedInt
 
 #Check if presorted files are identical to those in searchDir:
 #Re-sort only if different.	
-if(len(set(orderedH5Files) - set(h5files)) == 0):
+if(len(set(h5files) - set(orderedH5Files)) == 0):
 	print "Number of pre-sorted filenames matches those in %s" % (searchDir)
 	P.plot(integratedIntens)
 	P.title("Note the strong/weak hits cutoff")

@@ -5,6 +5,7 @@ import h5py as H
 import glob as G
 import os 
 import re
+import time
 import pylab as P
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
@@ -16,6 +17,7 @@ parser.add_option("-s", "--step", action="store_true", dest="stepThroughImages",
 parser.add_option("-o", "--outputDir", action="store", type="string", dest="outputDir", help="output directory (also inspection directory) will be appended by run number (default: output_rxxxx); separate types will be stored in output_rxxxx/anomaly/type[1-3]", default="output")
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", default=10000)
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
+parser.add_option("-c", "--cutoffFluctuation", action="store", type="float", dest="cutoffFluc", help="masks out pixels with relative fluctuations below this value", default=0.0)
 (options, args) = parser.parse_args()
 
 source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
@@ -87,6 +89,8 @@ class img_class (object):
 		global colmin
 		global storeFlag
 		self.tag = currTag
+		colmax = ((self.inarr<options.maxIntens)*self.inarr).max()
+		colmin = self.inarr.min()
 	
 	def on_keypress_for_retagging(self,event):
 		global colmax
@@ -279,6 +283,11 @@ class img_class (object):
 avgArr = N.zeros((numTypes+1,1760,1760))
 avgRadAvg = N.zeros((numTypes+1,1233))
 typeOccurences = N.zeros(numTypes+1)
+
+avgTotArr = N.zeros((1760,1760))
+avgTotSqArr = N.zeros((1760,1760))
+totCounter = 0
+
 waveLengths={}
 for i in range(numTypes+1):
 	waveLengths[i] = []
@@ -290,6 +299,7 @@ for currentlyExamining in range(numTypes+1):
 	fcounter = 0
 	numFilesInDir = len(files[currentlyExamining])
 	if (viewTypes[currentlyExamining]==1):
+		t1 = time.time()
 		print "now examining "+ dirName
 		os.chdir(dirName)
 		for fname in files[currentlyExamining]:
@@ -298,7 +308,7 @@ for currentlyExamining in range(numTypes+1):
 				print "%d of %d files" % (fcounter, numFilesInDir)
 			diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
 			f = H.File(diffractionName, 'r')
-			d = N.array(f['/data/data'])
+			d = N.array(f['/data/data']).astype(float)
 			currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
 			f.close()
 			angAvgName = fname
@@ -323,9 +333,21 @@ for currentlyExamining in range(numTypes+1):
 			waveLengths[storeFlag].append(currWavelengthInAngs)
 			avgArr[storeFlag] += d
 			avgRadAvg[storeFlag] += davg
+			avgTotArr += d
+			avgTotSqArr += d*d
+			totCounter += 1.
 			typeOccurences[storeFlag] += 1
 			fcounter += 1
 		os.chdir(originaldir)
+		t2 = time.time()
+		print "time taken = " + str(t2-t1)
+		print "mean wavelength = " + str(N.mean(waveLengths[currentlyExamining]))
+		print "relative change in wavelength = " + str(N.std(waveLengths[currentlyExamining])/N.mean(waveLengths[currentlyExamining]))
+		print "max-min wavelength = " + str(N.max(waveLengths[currentlyExamining]) - N.min(waveLengths[currentlyExamining]))
+
+avgTotArr /= totCounter
+avgTotSqArr /= totCounter
+mask = (N.sqrt(avgTotSqArr - avgTotArr*avgTotArr) / (avgTotArr+1E-7)) > options.cutoffFluc
 
 ########################################################
 # Loop to display all H5 files with ice anomalies. 
@@ -345,7 +367,7 @@ for dirName in write_anomaly_dir_types:
 			typeTag = runtag+'_'+(dirName.split('/')[-2])
 		else:
 			typeTag = runtag+'_type0'
-		currImg = img_class(avgArr[storeFlag], avgRadAvg[storeFlag], typeTag, storeFlag, meanWaveLengthInAngs=N.mean(waveLengths[storeFlag]))
+		currImg = img_class(mask * avgArr[storeFlag], avgRadAvg[storeFlag], typeTag, storeFlag, meanWaveLengthInAngs=N.mean(waveLengths[storeFlag]))
 		currImg.draw_img_for_viewing()
 		if(options.inspectOnly):
 			print "Inspection only mode."
