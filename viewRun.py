@@ -313,7 +313,10 @@ for currentlyExamining in range(numTypes+1):
 			f.close()
 			angAvgName = fname
 			f = H.File(angAvgName, 'r')
-			davg = N.array(f['data']['data'][0])
+			if (len(N.array(f['data']['data'])) == 2):
+				davg = N.array(f['data']['data'][1])
+			else:
+				davg = N.array(f['data']['data'][0])
 			f.close()
 			if(options.stepThroughImages and (currentlyExamining !=0) and (options.inspectOnly == False)):
 				currImg = img_class(d, davg, fname, currentlyExamining, meanWaveLengthInAngs=currWavelengthInAngs)

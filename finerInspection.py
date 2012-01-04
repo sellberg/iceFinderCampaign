@@ -289,7 +289,10 @@ if(options.averageWaterTypes):
 		avgArr[0] += d
 		angAvgName = write_dir + '/' + fname
 		f = H.File(angAvgName, 'r')
-		davg = N.array(f['data']['data'][0])
+		if (len(N.array(f['data']['data'])) == 2):
+			davg = N.array(f['data']['data'][1])
+		else:
+			davg = N.array(f['data']['data'][0])
 		f.close()
 		avgRadAvg[0] += davg
 		typeOccurences[0] += 1.
@@ -328,7 +331,10 @@ for fname in anomalies:
 	f.close()
 	angAvgName = write_dir + '/' + fname
 	f = H.File(angAvgName, 'r')
-	davg = N.array(f['data']['data'][0])
+	if (len(N.array(f['data']['data'])) == 2):
+		davg = N.array(f['data']['data'][1])
+	else:
+		davg = N.array(f['data']['data'][0])
 	f.close()
 	print "wavelength:%lf, detectorPos:%lf"%(currWavelengthInAngs,currDetectorDist)
 	currImg = img_class(d, davg, fname, meanWaveLengthInAngs=currWavelengthInAngs, detectorDistance=currDetectorDist)

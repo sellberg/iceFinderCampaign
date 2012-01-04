@@ -246,7 +246,10 @@ if (options.weakHitsTreatment == 1):
 			f.close()
 			angAvgName = ang_avg_dir + runtag + '/' + fname
 			f = H.File(angAvgName, 'r')
-			davg = N.array(f['data']['data'][0])
+			if (len(N.array(f['data']['data'])) == 2):
+				davg = N.array(f['data']['data'][1])
+			else:
+				davg = N.array(f['data']['data'][0])
 			avg += davg
 			f.close()
 	
@@ -283,7 +286,10 @@ if(options.strongHitsTreatment == 1):
 			f.close()
 			angAvgName = ang_avg_dir + runtag + '/' + fname
 			f = H.File(angAvgName, 'r')
-			davg = N.array(f['data']['data'][0])
+			if (len(N.array(f['data']['data'])) == 2):
+				davg = N.array(f['data']['data'][1])
+			else:
+				davg = N.array(f['data']['data'][0])
 			avg += davg
 			f.close()
 			numPresentStrongFiles += 1.
