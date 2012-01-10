@@ -91,36 +91,6 @@ if (len(sFound) != len(foundFiles)):
 	print "Duplicate files exist in the pre-sorted directories. Aborting."
 	sys.exit(1)
 
-#Check that all files in searchDir are included in the presorted files
-if (sH5.issubset(sFound)):
-	print "There are %d pre-sorted files in %s (and its subfolders) that will not get updated." % (len(sFound-sH5), write_dir)
-	print "Updating %d pre-sorted files..." % (numFiles)
-	fcounter = 0
-	for fname in h5files:
-		angAvgName = ang_avg_dir + runtag + '/' + fname
-		diffractionName = source_dir + runtag + '/' + re.sub("-angavg",'',fname)
-		if os.path.exists(diffractionName):
-			#Check if fname is part of type0
-			if (fname in set(foundTypeFiles[0])):
-				shutil.copyfile(angAvgName, write_dir+fname)
-				fcounter += 1
-				if (options.verbose and (round(((fcounter*100)%numFiles)/100)==0)):
-					print str(fcounter) + " of " + str(numFiles) + " files copied (" + str(fcounter*100/numFiles) + "%)"
-			else:
-				for i in range(1, numTypes):
-					if (fname in set(foundTypeFiles[i])):
-						shutil.copyfile(angAvgName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+fname)
-						shutil.copyfile(diffractionName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+re.sub("-angavg",'',fname))
-						fcounter += 1
-						if (options.verbose and (round(((fcounter*100)%numFiles)/100)==0)):
-							print str(fcounter) + " of " + str(numFiles) + " files copied (" + str(fcounter*100/numFiles) + "%)"
-		else:
-			print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
-	print "Updated %d of %d files successfully." % (fcounter, numFiles)
-else:
-	print "Found %d angavg files in %s/ that are not already sorted. Should sort files first with ./separateAndShowStrongHits.py and ./fineInspection.py, aborting." % (len(sH5-sFound), searchDir)
-	sys.exit(1)
-
 
 #Global parameters
 colmax = 1000
@@ -216,6 +186,7 @@ avgAngAvgQ = N.arange(options.min_value,options.max_value+options.delta_value,op
 angAvgLength = int((options.max_value-options.min_value)/options.delta_value)+1
 avgAngAvg = N.zeros((numTypes,angAvgLength))
 typeOccurences = N.zeros(numTypes)
+damaged_events = []
 wavelengths = [[] for i in foundTypeNumbers]
 
 #Loop over each type to spline and sum all hits
@@ -234,14 +205,19 @@ for currentlyExamining in range(numTypes):
 					print str(fcounter) + " of " + str(numFilesInDir) + " files splined (" + str(fcounter*100/numFilesInDir) + "%)"
 				diffractionName = source_dir + runtag + "/" + re.sub("-angavg",'',fname)
 				if os.path.exists(diffractionName):
+					angAvgName = fname
+					f = H.File(angAvgName, 'r')
+					davg = N.array(f['data']['data'])
+					f.close()
+					if (davg[0].max() < options.max_value):
+						print "Error in Q-calibration! Qmax = %s, skipping event." % (davg[0].max())
+						damaged_events.append(fname)
+						continue
+					
 					f = H.File(diffractionName, 'r')
 					d = N.array(f['/data/data']).astype(float)
 					draw = N.array(f['/data/rawdata']).astype(float)
 					currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
-					f.close()
-					angAvgName = fname
-					f = H.File(angAvgName, 'r')
-					davg = N.array(f['data']['data'])
 					f.close()
 					f = I.interp1d(davg[0], davg[1])
 					davg = f(avgAngAvgQ)
@@ -263,6 +239,13 @@ for currentlyExamining in range(numTypes):
 		else:
 			print "Found %d angavg files in %s/ that have not been updated. Should update all files before splining, aborting." % (len(set(foundTypeFiles[currentlyExamining])-sH5), dirName)
 			sys.exit(1)
+
+
+if damaged_events:
+	damaged_events_name = write_dir + runtag + "_damaged_events.txt"
+	print "There are %s damaged events that have been ignored." % (len(damaged_events))
+	N.array(damaged_events).tofile(damaged_events_name, sep="\n")
+	print "Saved damaged events to %s" % (damaged_events_name)
 
 
 print "Right-click on colorbar to set maximum scale."
