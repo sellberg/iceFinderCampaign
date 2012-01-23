@@ -32,6 +32,7 @@ runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'
 canonicalOrderedHitsFN = write_dir + runtag + "_orderedFiles.txt"
 canonicalOrderedIntensInHitsFN = write_dir + runtag + "_orderedIntens.txt"
+canonicalOrderedIntensInHitsPNG = write_dir + runtag + "_orderedIntens.png"
 
 h5files= []
 integratedIntens = []
@@ -84,6 +85,8 @@ if(len(set(h5files) - set(orderedH5Files)) == 0):
 	P.title("Note the strong/weak hits cutoff")
 	P.xlabel("sorted frame number")
 	P.ylabel("integrated radial intensities of each run")
+	print "saving image as %s"%canonicalOrderedIntensInHitsPNG
+	P.savefig(canonicalOrderedIntensInHitsPNG)
 	P.show()
 else:
 	print "Found %d angavg files, sorting them now.."%(numFiles)
@@ -91,7 +94,10 @@ else:
 	for i in range(numFiles):
 		fullFilePath = ang_avg_dir+runtag+"/"+h5files[i]
 		f = H.File(fullFilePath, 'r')
-		integratedIntens[i] = N.abs(N.array(f['/data/data'])).sum()
+		if (len(N.array(f['data']['data'])) == 2):
+			integratedIntens[i] = N.abs(N.array(f['data']['data'][1])).sum()
+		else:
+			integratedIntens[i] = N.abs(N.array(f['data']['data'][0])).sum()
 		f.close()
 	ordering = integratedIntens.argsort()
 	orderedH5Files = N.array(h5files)[ordering]
@@ -99,6 +105,8 @@ else:
 	P.title("Note the strong/weak hits cutoff")
 	P.xlabel("sorted frame number")
 	P.ylabel("integrated radial intensities of each run")
+	print "saving image as %s"%canonicalOrderedIntensInHitsPNG
+	P.savefig(canonicalOrderedIntensInHitsPNG)
 	P.show()
 	orderedH5Files.tofile(canonicalOrderedHitsFN, sep="\n")
 	(integratedIntens[ordering]).tofile(canonicalOrderedIntensInHitsFN, sep="\n")
@@ -226,15 +234,15 @@ if(options.store_files):
 # Weakly scattering files
 #########################################################
 waveLengths=[]
-if (options.weakHitsTreatment == 1):
+if (options.weakHitsTreatment == 1 and len(weakFiles) > 0):
 	print "averaging weak hits..."
 	arr  = []
 	avg = N.zeros(1233)
 	fcounter = 0
 	for fname in weakFiles:
 		diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
-		if(options.verbose and (fcounter%10==0)):
-			print str(fcounter) + " of " + str(cutoff) + " weak files"
+		if(options.verbose and (round(((fcounter*100)%cutoff)/100)==0)):
+			print str(fcounter) + " of " + str(cutoff) + " weak files (" + str(fcounter*100/cutoff) + "%)"
 		fcounter += 1
 		if(os.path.exists(diffractionName)):
 			f = H.File(diffractionName, 'r')
@@ -264,7 +272,7 @@ if (options.weakHitsTreatment == 1):
 # Strongly scattering files
 ########################################################
 waveLengths=[]
-if(options.strongHitsTreatment == 1):
+if(options.strongHitsTreatment == 1 and len(strongFiles) > 0):
 	print "averaging strong hits"
 	arr  = []
 	avg = N.zeros(1233)
@@ -273,8 +281,8 @@ if(options.strongHitsTreatment == 1):
 	numPresentStrongFiles = 0
 	for fname in strongFiles:
 		diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
-		if(options.verbose and (fcounter%10==0)):
-			print str(fcounter) + " of " + str(numStrongFiles) + " strong files"
+		if(options.verbose and (round(((fcounter*100)%numStrongFiles)/100)==0)):
+			print str(fcounter) + " of " + str(numStrongFiles) + " strong files (" + str(fcounter*100/numStrongFiles) + "%)"
 		fcounter += 1
 		if(os.path.exists(diffractionName)):
 			f = H.File(diffractionName, 'r')

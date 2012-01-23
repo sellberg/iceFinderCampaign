@@ -13,9 +13,13 @@ parser = OptionParser()
 parser.add_option("-r", "--run", action="store", type="string", dest="runNumber", help="run number you wish to view", metavar="rxxxx")
 parser.add_option("-i", "--inspectOnly", action="store_true", dest="inspectOnly", help="inspect output directory", default=False)
 parser.add_option("-o", "--outputDir", action="store", type="string", dest="outputDir", help="output directory will be appended by run number (default: output_rxxxx); separate types will be stored in output_rxxxx/anomaly/type[1-3]", default="output")
+parser.add_option("-a", "--auto", action="store_true", dest="auto", help="ignores any manual sorting (of hits not automatically classified as type2)",default=False)
 parser.add_option("-W", "--waterAveraging", action="store_true", dest="averageWaterTypes", help="average pattern and angavg of water types", default=False)
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value (default:2000)", default=2000)
 parser.add_option("-S", "--sortTypes", action="store", type="int", dest="sortTypes", help="default:0. -1(descending total intens), 0(peakyness), 1(ascending total intens).", default=0)
+parser.add_option("-T", "--thresholdType2", action="store", type="float", dest="thresholdType2", help="sets threshold for max intensity of angular average below which hits are automatically sorted to type2 (default:0)", default=0)
+parser.add_option("-L", "--lowerBoundType2", action="store", type="int", dest="lowerBoundType2", help="sets lower bound of pixels for max intensity of angular average below which hits are automatically sorted to type2 (default:200)", default=200)
+parser.add_option("-U", "--upperBoundType2", action="store", type="int", dest="upperBoundType2", help="sets upper bound of pixels for max intensity of angular average below which hits are automatically sorted to type2 (default:1150)", default=1150)
 (options, args) = parser.parse_args()
 
 #Tagging directories with the correct names
@@ -26,7 +30,7 @@ write_dir = options.outputDir + '_' + runtag + '/'
 write_anomaly_dir = write_dir
 if(not os.path.exists(write_anomaly_dir)):
 	os.mkdir(write_anomaly_dir)
-numTypes = 5
+numTypes = 9
 write_anomaly_dir_types = [write_dir]
 for i in range(numTypes):
 	write_anomaly_dir_types.append(write_anomaly_dir+"type"+str(i+1)+"/") 
@@ -38,8 +42,11 @@ os.chdir(write_dir)
 files = G.glob("LCLS*angavg.h5")
 print "reading ang_avgs.."
 for i in files:
-	f = H.File(i)
-	arr.append(N.array(f['data']['data'][0]))
+	f = H.File(i, 'r')
+	if (len(N.array(f['data']['data'])) == 2):
+		arr.append(N.array(f['data']['data'][1]))
+	else:
+		arr.append(N.array(f['data']['data'][0]))
 	f.close()
 os.chdir(originaldir)
 masterArr = N.array(arr)
@@ -188,7 +195,8 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+#		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
@@ -208,16 +216,18 @@ class img_class (object):
 		P.show()
 
 	def draw_img_for_tagging(self):
-		if(not options.inspectOnly):
+		if(not options.inspectOnly and not options.auto):
 			print "Press 1-"+ str(numTypes)+ " to save png (overwrites old PNGs); Press 0 to undo (deletes png if wrongly saved)."
 		global colmax
 		global colmin
+		global storeFlag
 		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
 		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_tagging)
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+#		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
@@ -234,8 +244,23 @@ class img_class (object):
 			labelPosition += maxAngAvg/numQLabels
 		
 		P.plot(self.inangavg)
-		P.show()
-
+		#Check for max intensity of angular average below threshold
+		if (not options.inspectOnly and (self.inangavg[options.lowerBoundType2:options.upperBoundType2]).max() < options.thresholdType2):
+			print "%s automatically characterized as type2." % (self.filename)
+			storeFlag = 2
+			if(not os.path.exists(write_anomaly_dir_types[storeFlag])):
+				os.mkdir(write_anomaly_dir_types[storeFlag])
+			self.axes.set_clim(0, 2000)
+			pngtag = write_anomaly_dir_types[storeFlag] + "%s.png" % (self.filename)
+			P.savefig(pngtag)
+			print "%s saved." % (pngtag)
+			self.tag = storeFlag
+			P.close()
+		elif (options.auto):
+			P.close()
+		else:
+			P.show()
+	
 	def draw_spectrum(self):
 		print "Press 'p' to save PNG."
 		global colmax
@@ -263,7 +288,7 @@ print "Center-click on colorbar (or press 'r') to reset color scale."
 print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
 print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
 
-currImg = img_class(sorted_arr, None, runtag+"_spectrum")
+currImg = img_class(sorted_arr, None, runtag+"_spectrum_sort%s"%(options.sortTypes))
 currImg.draw_spectrum()
 cutoff = int(input("ice/water cutoff? "))
 
@@ -287,7 +312,7 @@ if(options.averageWaterTypes):
 		waveLengths[0].append(f['LCLS']['photon_wavelength_A'][0])
 		f.close()
 		avgArr[0] += d
-		angAvgName = write_dir + '/' + fname
+		angAvgName = write_dir + fname
 		f = H.File(angAvgName, 'r')
 		if (len(N.array(f['data']['data'])) == 2):
 			davg = N.array(f['data']['data'][1])
@@ -329,7 +354,7 @@ for fname in anomalies:
 	currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
 	currDetectorDist=(1.E-3)*f['LCLS']['detectorPosition'][0] 
 	f.close()
-	angAvgName = write_dir + '/' + fname
+	angAvgName = write_dir + fname
 	f = H.File(angAvgName, 'r')
 	if (len(N.array(f['data']['data'])) == 2):
 		davg = N.array(f['data']['data'][1])
@@ -355,6 +380,7 @@ for fname in anomalies:
 #View the averages. Tagging disabled.
 for i in range(numTypes):
 	if (typeOccurences[i] > 0.):
+		print "averaging new hits in type%s.."%i
 		storeFlag=i
 		avgArr[i] /= typeOccurences[i]
 		avgRadAvg[i] /= typeOccurences[i]

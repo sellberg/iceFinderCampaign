@@ -7,13 +7,14 @@ import os
 import re
 import time
 import pylab as P
+import operator as O
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-r", "--run", action="store", type="string", dest="runNumber", help="run number you wish to view", metavar="rxxxx")
 parser.add_option("-i", "--inspectOnly", action="store_true", dest="inspectOnly", help="inspect output directory", default=False)
-parser.add_option("-s", "--step", action="store_true", dest="stepThroughImages", help="step through individual images in types (except type 0)", default=False)
+parser.add_option("-s", "--step", action="store_true", dest="stepThroughImages", help="step through individual images in types (except type0)", default=False)
 parser.add_option("-o", "--outputDir", action="store", type="string", dest="outputDir", help="output directory (also inspection directory) will be appended by run number (default: output_rxxxx); separate types will be stored in output_rxxxx/anomaly/type[1-3]", default="output")
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", default=10000)
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
@@ -30,6 +31,16 @@ originaldir=os.getcwd()
 foundTypes=G.glob(write_anomaly_dir+"type[1-9]")
 numTypes=len(foundTypes)
 print "Found %d types in addition to type0" % numTypes
+types = [int(re.sub(r""+write_dir+"type(\d+)",r"\1", i)) <= numTypes for i in foundTypes]
+if O.contains(types,False):
+	print "Adding empty directories for consistency/continuity"
+	for i in N.arange(numTypes):
+		if not os.path.exists(write_anomaly_dir + "type%s"%(i+1)):
+		    os.mkdir(write_anomaly_dir + "type%s"%(i+1))
+		    print "Created directory: " + write_anomaly_dir + "type%s"%(i+1)
+	foundTypes=G.glob(write_anomaly_dir+"type[1-9]")
+	numTypes=len(foundTypes)
+
 viewTypes = N.zeros(numTypes+1, dtype='int64')
 files = [""]*(numTypes+1)
 write_anomaly_dir_types = [""]*(numTypes+1)
@@ -304,13 +315,25 @@ for currentlyExamining in range(numTypes+1):
 		os.chdir(dirName)
 		for fname in files[currentlyExamining]:
 			storeFlag = currentlyExamining
-			if (options.verbose and (fcounter%10)==0):
-				print "%d of %d files" % (fcounter, numFilesInDir)
+			if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
+				print str(fcounter) + " of " + str(numFilesInDir) + " files (" + str(fcounter*100/numFilesInDir) + "%)"
 			diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
-			f = H.File(diffractionName, 'r')
-			d = N.array(f['/data/data']).astype(float)
-			currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
-			f.close()
+			if os.path.exists(diffractionName):
+				f = H.File(diffractionName, 'r')
+				d = N.array(f['/data/data']).astype(float)
+				currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
+				currDetectorDist=(1.E-3)*f['LCLS']['detectorPosition'][0]
+				f.close()
+			elif os.path.exists(dirName+re.sub("-angavg",'',fname)):
+				diffractionName = dirName+re.sub("-angavg",'',fname)
+				f = H.File(diffractionName, 'r')
+				d = N.array(f['/data/data']).astype(float)
+				currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
+				currDetectorDist=(1.E-3)*f['LCLS']['detectorPosition'][0]
+				f.close()
+			else:
+				print "%s does not exist, aborting." % (diffractionName)
+				sys.exit(1)
 			angAvgName = fname
 			f = H.File(angAvgName, 'r')
 			if (len(N.array(f['data']['data'])) == 2):
@@ -319,7 +342,7 @@ for currentlyExamining in range(numTypes+1):
 				davg = N.array(f['data']['data'][0])
 			f.close()
 			if(options.stepThroughImages and (currentlyExamining !=0) and (options.inspectOnly == False)):
-				currImg = img_class(d, davg, fname, currentlyExamining, meanWaveLengthInAngs=currWavelengthInAngs)
+				currImg = img_class(d, davg, fname, currentlyExamining, meanWaveLengthInAngs=currWavelengthInAngs, detectorDistance=currDetectorDist)
 				currImg.draw_img_for_retagging()
 
 				if(storeFlag != currentlyExamining):
