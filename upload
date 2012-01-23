@@ -14,4 +14,7 @@ switch ($1)
 	case analyzeSums-:
 	scp analyzeSums-*.py sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/
 	
+	case averageRuns-:
+	scp averageRuns-*.py sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/
+	
 endsw

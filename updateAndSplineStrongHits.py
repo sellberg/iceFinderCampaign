@@ -280,7 +280,7 @@ for dirName in foundTypes:
 		avgArr[storeFlag] /= typeOccurences[storeFlag]
 		avgRawArr[storeFlag] /= typeOccurences[storeFlag]
 		avgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
-		if(storeFlag > 0):
+		if (storeFlag > 0):
 			typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
 		else:
 			typeTag = runtag+'_type0'
