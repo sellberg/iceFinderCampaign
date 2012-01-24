@@ -216,6 +216,10 @@ avgArr = N.zeros((numTypes,1760,1760))
 avgRawArr = N.zeros((numTypes,1480,1552))
 avgRadAvg = N.zeros((numTypes,1233))
 typeOccurences = N.zeros(numTypes)
+threshArr = N.zeros((numTypes,1760,1760))
+threshRawArr = N.zeros((numTypes,1480,1552))
+threshRadAvg = N.zeros((numTypes,1233))
+threshOccurences = N.zeros(numTypes)
 wavelengths = [[] for i in foundTypeNumbers]
 
 #Loop over each type to threshold and sum all hits
@@ -265,6 +269,10 @@ for currentlyExamining in range(numTypes):
 				if (options.verbose):
 					print "Moving %s to " % (fname) + subdir
 				os.system("mv " + baseName + "* " + subdir)
+				threshArr[currentlyExamining] += d
+				threshRawArr[currentlyExamining] += draw
+				threshRadAvg[currentlyExamining] += davg
+				threshOccurences[currentlyExamining] += 1
 				currImg = img_class(d, davg, fname, currWavelengthInAngs, currDetectorDist)
 				currImg.draw_img_for_thresholding()
 				tcounter += 1
@@ -298,11 +306,22 @@ for dirName in foundTypes:
 		avgArr[storeFlag] /= typeOccurences[storeFlag]
 		avgRawArr[storeFlag] /= typeOccurences[storeFlag]
 		avgRadAvg[storeFlag] /= typeOccurences[storeFlag]		
-		if (storeFlag > 0):
-			typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
-		else:
-			typeTag = runtag+'_type0'
+		typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
 		currImg = img_class(avgArr[storeFlag], avgRadAvg[storeFlag], typeTag, meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
+		currImg.draw_img_for_viewing()
+		f = H.File(dirName +'/'+ typeTag + ".h5", "w")
+		entry_1 = f.create_group("/data")
+		entry_1.create_dataset("diffraction", data=avgArr[storeFlag])
+		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
+		entry_1.create_dataset("angavg", data=avgRadAvg[storeFlag])	
+		f.close()
+		print "Successfuly updated %s" % (dirName +'/'+ typeTag + ".h5")
+	if (threshOccurences[storeFlag] > 0.):
+		threshArr[storeFlag] /= threshOccurences[storeFlag]
+		threshRawArr[storeFlag] /= threshOccurences[storeFlag]
+		threshRadAvg[storeFlag] /= threshOccurences[storeFlag]		
+		typeTag = "below%dADUs/"%(options.threshold)+runtag+'_type'+str(foundTypeNumbers[storeFlag])+"-below_%dADUs"%(options.threshold)
+		currImg = img_class(threshArr[storeFlag], threshRadAvg[storeFlag], typeTag, meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
 		currImg.draw_img_for_viewing()
 		f = H.File(dirName +'/'+ typeTag + ".h5", "w")
 		entry_1 = f.create_group("/data")
