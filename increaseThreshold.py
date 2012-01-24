@@ -14,12 +14,12 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-r", "--run", action="store", type="string", dest="runNumber", help="run number you wish to view", metavar="rxxxx")
-parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  
-parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 parser.add_option("-T", "--threshold", action="store", type="float", dest="threshold", help="sets threshold for max intensity of angular average below which hits are automatically sorted to sub-type (default:0)", default=0)
 parser.add_option("-L", "--lowerBound", action="store", type="int", dest="lowerBound", help="sets lower bound of pixels for max intensity of angular average below which hits are automatically sorted to sub-type (default:200)", default=200)
 parser.add_option("-U", "--upperBound", action="store", type="int", dest="upperBound", help="sets upper bound of pixels for max intensity of angular average below which hits are automatically sorted to sub-type (default:1150)", default=1150)
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value (default:2000)", default=2000)
+parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 (options, args) = parser.parse_args()
 
 #Tagging directories with the correct names
