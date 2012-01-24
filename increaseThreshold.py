@@ -38,8 +38,7 @@ if not os.path.exists(write_dir):
 else:
 	write_anomaly_dir = write_dir 
 	originaldir = os.getcwd()
-	#foundTypes = [options.outputDir + '_' + runtag]
-	foundTypes = ["output_r0063"]
+	foundTypes = [options.outputDir + '_' + runtag]
 	anomalousTypes = G.glob(write_anomaly_dir+"type[1-9]")
 	if (len(anomalousTypes) > 0):
 		foundTypes += anomalousTypes
