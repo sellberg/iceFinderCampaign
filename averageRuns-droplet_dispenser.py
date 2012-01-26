@@ -2,6 +2,7 @@
 
 # Written by J. Sellberg on 2012-01-09
 # Has the same functionality as analyzeSums-droplet_dispenser.py but for the new data format
+# Modified by J.S. on 2012-01-25 to include the thresholding analysis
 
 import numpy as N
 from numpy import linalg as LA
@@ -19,17 +20,27 @@ parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxInte
 
 # adapted to droplet dispenser (water only)
 # with r0102
-#runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97],[102]]
-#nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820],[1675]]
-#dhits_water = [[0],[83],[21],[0,4],[],[6],[11,0],[0],[0],[]]
-#colors = ['b','g','r','c','m','y','k']
-#temperatures = [290,260,254,249,244,243,240,235,233,232]
+runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97],[102]]
+nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820],[1675]]
+dhits_water = [[0],[83],[21],[0,4],[22],[6],[11,0],[0],[0],[]]
+colors = ['b','g','r','c','m','y','k']
+temperatures = [290,260,254,249,244,243,240,235,233,232]
 # without r0102
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
 nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820]]
+# hits with damged Q-calibration
 dhits_water = [[0],[83],[21],[0,4],[22],[6],[11,0],[0],[0]]
+# thresholded hits below 50 ADUs
+runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
+t50hits_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[0],[0]]
+# thresholded hits below 100 ADUs
+runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
+t100hits_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[1453],[1020]]
 colors = ['r','g','b','c','m','y','k']
-temperatures = [290,260,254,249,244,243,240,235,233]
+#temperatures = [290,260,254,249,244,243,240,235,233]
+temperatures = [283,255,249,245,241,240,237,233,231]
+#distances = [0.750000,10.000000,15.681899,20.681899,30.000000,30.699899,40.699899,60.699899,70.649900]
+distances = [0.750000,10.011910,15.798895,20.789092,30.006612,30.738471,40.759723,60.710063,70.662700]
 
 source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
 sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
@@ -120,8 +131,8 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename, fontsize='x-large', fontstretch='condensed')
-		#self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = 300, vmin = 0)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 300, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		
@@ -146,7 +157,7 @@ class img_class (object):
 		global colmax
 		global colmin
 		self.inangavg = self.inangavg*(self.inangavg>0)
-		print "Press 'p' to save PNG, 'e' to save EPS."
+		#print "Press 'p' to save PNG, 'e' to save EPS."
 		
 		fig = P.figure(num=None, figsize=(8, 5), dpi=100, facecolor='w', edgecolor='k')
 		fig.subplots_adjust(wspace=0.1)
@@ -154,13 +165,16 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(111)
 		canvas.set_title("Water T=%sK"%(self.inangavg_Q[1]) + " (%s Hits)"%(self.inangavg_Q[0]), fontsize=22, fontname='sans-serif', fontweight='roman')
-		#self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = 500, vmin = 0)
-		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 200, vmin = 0)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 100, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		
-		P.show()
+		#P.show()
+		pngtag =  "%s.png" % (self.filename)
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		P.close()
 
 
 # FAST VERSION (premade sums)
@@ -197,15 +211,18 @@ for i in N.arange(len(runs)):
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels)
+	
+	print "output_runs-T%sK-angavg.png saved."%(temperatures[i])
 	P.savefig(original_dir + "output_runs-T%sK-angavg.png"%(temperatures[i]))
 	#P.savefig(original_dir + "output_runs-T%sK-angavg.eps"%(temperatures[i]), format='eps')
-	P.show()
+	#P.show()
+	P.close()
 	
 	
-	sumwater = float(sum(nhits_water[i])-sum(dhits_water[i]))
+	sumwater = float(sum(nhits_water[i])-sum(dhits_water[i])-sum(t50hits_water[i]))
 	for j in N.arange(len(runs[i])):
-		nwater = nhits_water[i][j]-dhits_water[i][j]
-		if (nwater != 0):
+		nwater = nhits_water[i][j]-dhits_water[i][j]-t50hits_water[i][j]
+		if (nwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
 			temp_water_pattern[j] *= nwater/sumwater
 	
@@ -218,8 +235,8 @@ for i in N.arange(len(runs)):
 	currImg.draw_img_for_viewing_pattern()
 
 #plot angavg
-fig = P.figure(num=None, figsize=(8, 5), dpi=100, facecolor='w', edgecolor='k')
-canvas = fig.add_subplot(111)
+fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+canvas = fig.add_subplot(121)
 #canvas.set_title("Water", fontsize='x-large')
 #P.xlabel("Q (Angstroms-1)", fontsize='x-large')
 #P.ylabel("Average Intensity (ADUs)", fontsize='x-large')
@@ -232,20 +249,24 @@ for i in N.arange(len(runs)):
 	P.plot(Q_angavg[i], water_angavg[i], color=colors[i-4], label="T = %s K"%(temperatures[i]))
 
 handles, labels = canvas.get_legend_handles_labels()
-canvas.legend(handles, labels)
+canvas.legend(handles, labels, loc='upper left', bbox_to_anchor = (1, 1))
+
+print "output_runs-droplet_dispenser-all_T-angavg_Q.png saved."
 P.savefig(original_dir + "output_runs-droplet_dispenser-all_T-angavg_Q.png")
 #P.savefig(original_dir + "output_runs-droplet_dispenser-all_T-angavg_Q.eps", format='eps')
-P.show()
+#P.show()
+P.close()
 
 #save to file
-f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q.h5", 'w')
+f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_50ADUs.h5", 'w')
 entry_1 = f.create_group("/data")
 for i in N.arange(len(runs)):
-	entry_2 = f.create_group("/data/T%sK"%(temperatures[i]))
-	entry_3 = f.create_group("/data/T%sK/water"%(temperatures[i]))
+	entry_2 = f.create_group("/data/%.1fmm"%(distances[i]))
+	entry_3 = f.create_group("/data/%.1fmm/water"%(distances[i]))
 	entry_3.create_dataset("diffraction", data=water_pattern[i])
 	entry_3.create_dataset("angavg", data=water_angavg[i])
 	entry_3.create_dataset("angavg_Q", data=Q_angavg[i])
 
 f.close()
+print "Successfully updated output_runs-droplet_dispenser-all_T+Q_50ADUs.h5"
 
