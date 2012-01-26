@@ -219,9 +219,9 @@ for i in N.arange(len(runs)):
 	P.close()
 	
 	
-	sumwater = float(sum(nhits_water[i])-sum(dhits_water[i])-sum(t50hits_water[i]))
+	sumwater = float(sum(nhits_water[i])-sum(dhits_water[i])-sum(t50hits_water[i])-sum(t100hits_water[i]))
 	for j in N.arange(len(runs[i])):
-		nwater = nhits_water[i][j]-dhits_water[i][j]-t50hits_water[i][j]
+		nwater = nhits_water[i][j]-dhits_water[i][j]-t50hits_water[i][j]-t100hits_water[i][j]
 		if (nwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
 			temp_water_pattern[j] *= nwater/sumwater
@@ -258,7 +258,7 @@ P.savefig(original_dir + "output_runs-droplet_dispenser-all_T-angavg_Q.png")
 P.close()
 
 #save to file
-f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_50ADUs.h5", 'w')
+f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_100ADUs.h5", 'w')
 entry_1 = f.create_group("/data")
 for i in N.arange(len(runs)):
 	entry_2 = f.create_group("/data/%.1fmm"%(distances[i]))
@@ -268,5 +268,5 @@ for i in N.arange(len(runs)):
 	entry_3.create_dataset("angavg_Q", data=Q_angavg[i])
 
 f.close()
-print "Successfully updated output_runs-droplet_dispenser-all_T+Q_50ADUs.h5"
+print "Successfully updated output_runs-droplet_dispenser-all_T+Q_100ADUs.h5"
 

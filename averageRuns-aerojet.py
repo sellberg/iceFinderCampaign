@@ -18,7 +18,7 @@ parser = OptionParser()
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", default=2000)
 (options, args) = parser.parse_args()
 
-# with r0165
+# regular
 runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
 nhits_water = [[12077],[3308],[10143],[15702],[3508,789,4986],[320,203,104,2280,1157,919,207],[188,127,156,208,206],[30,75]] #r0151 actually has 1159 water hits but two had damaged Q-calibration
 nhits_ice = [[1],[7],[7],[11],[2,2,8],[51,42,22,266,127,499,140],[780,625,425,732,1705],[2865,630]]
@@ -27,9 +27,9 @@ runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167
 t50hits_water = [[4028],[536],[1305],[2032],[858,120,788],[78,64,14,545,305,498,102],[120,63,90,95,115],[6,36]]
 t50hits_ice = [[0],[4],[3],[8],[0,0,5],[4,1,5,3,5,67,18],[312,285,27,34,830],[2402,167]]
 # thresholded hits below 100 ADUs
-#runs = [[114],[118,121],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-#t100hits_water = [[],[,],[],[,,],[194,,,,,,],[,,,,],[,]]
-#t100hits_ice = [[],[,],[],[,,],[12,,,,,,],[,,,,],[,]]
+runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
+t100hits_water = [[4493],[512],[1077],[2172],[677,158,573],[116,25,17,299,151,396,102],[66,54,63,101,86],[3,36]]
+t100hits_ice = [[0],[1],[3],[0],[0,1,1],[8,6,1,25,25,127,35],[230,189,170,249,417],[319,210]]
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [264,235,234,227,224,221,220,219]
@@ -262,11 +262,11 @@ for i in N.arange(len(runs)):
 	P.close()
 	
 	
-	sumwater = float(sum(nhits_water[i]) - sum(t50hits_water[i]))
-	sumice = float(sum(nhits_ice[i]) - sum(t50hits_ice[i]))
+	sumwater = float(sum(nhits_water[i]) - sum(t50hits_water[i]) - sum(t100hits_water[i]))
+	sumice = float(sum(nhits_ice[i]) - sum(t50hits_ice[i]) - sum(t100hits_ice[i]))
 	for j in N.arange(len(runs[i])):
-		nwater = nhits_water[i][j] - t50hits_water[i][j]
-		nice = nhits_ice[i][j] - t50hits_ice[i][j]
+		nwater = nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j]
+		nice = nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j]
 		if (nwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
 			temp_water_pattern[j] *= nwater/sumwater
@@ -327,7 +327,7 @@ P.savefig(original_dir + "output_runs-aerojet-all_T-angavg_Q.png")
 P.close()
 
 #save to file
-f = H.File(original_dir + "output_runs-aerojet-all_T+Q_50ADUs.h5", 'w')
+f = H.File(original_dir + "output_runs-aerojet-all_T+Q_100ADUs.h5", 'w')
 entry_1 = f.create_group("/data")
 for i in N.arange(len(runs)):
 	entry_2 = f.create_group("/data/%.1fmm"%(distances[i]))
@@ -341,4 +341,4 @@ for i in N.arange(len(runs)):
 	entry_4.create_dataset("angavg_Q", data=ice_angavgQ[i])
 
 f.close()
-print "Successfully updated output_runs-aerojet-all_T+Q_50ADUs.h5"
+print "Successfully updated output_runs-aerojet-all_T+Q_100ADUs.h5"
