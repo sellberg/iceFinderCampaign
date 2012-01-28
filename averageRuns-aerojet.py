@@ -11,6 +11,7 @@ import glob as G
 import os 
 import re
 import pylab as P
+import sys, os, re, shutil, subprocess, time
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
 
@@ -48,6 +49,66 @@ source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
 sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
 original_dir = os.getcwd() + '/'
 run_tag = "r0144"
+
+# statistics for hit rates
+nhits20 = [[] for i in runs]
+nhits50 = [[] for i in runs]
+nhits100 = [[] for i in runs]
+ratio20 = [[] for i in runs]
+ratio50 = [[] for i in runs]
+ratio100 = [[] for i in runs]
+thresholds = [20, 50, 100]
+ratios = [[] for i in thresholds]
+ratio_deviations = [[] for i in thresholds]
+
+fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+canvas = fig.add_subplot(121)
+canvas.set_title("Thresholded Ice Ratios", fontsize='x-large')
+P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
+P.ylabel("Ice Ratio", fontsize='x-large')
+
+for i in N.arange(len(runs)):
+	for j in N.arange(len(runs[i])):
+		nhits20[i].append(float(nhits_water[i][j] + nhits_ice[i][j]))
+		ratio20[i].append(nhits_ice[i][j]/nhits20[i][j])
+		nhits50[i].append(float(nhits_water[i][j] - t50hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j]))
+		ratio50[i].append((nhits_ice[i][j] - t50hits_ice[i][j])/nhits50[i][j])
+		nhits100[i].append(float(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j]))
+		ratio100[i].append((nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j])/nhits100[i][j])
+	
+	ratios[0].append(N.mean(ratio20[i]))
+	ratios[1].append(N.mean(ratio50[i]))
+	ratios[2].append(N.mean(ratio100[i]))
+	ratio_deviations[0].append(N.std(ratio20[i]))
+	ratio_deviations[1].append(N.std(ratio50[i]))
+	ratio_deviations[2].append(N.std(ratio100[i]))
+	
+	P.scatter(distances[i], ratios[0][i], color='r', marker='o')
+	P.scatter(distances[i], ratios[1][i], color='g', marker='o')
+	P.scatter(distances[i], ratios[2][i], color='b', marker='o')
+
+for i in N.arange(3):
+	P.plot(distances, ratios[i], color=colors[i], label="%s ADUs"%(thresholds[i]))
+
+handles, labels = canvas.get_legend_handles_labels()
+canvas.legend(handles, labels, loc='upper left')
+
+canvas = fig.add_subplot(122)
+canvas.set_title("Standard Deviation of Runs", fontsize='x-large')
+P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
+P.ylabel("Standard Deviation", fontsize='x-large')
+
+for i in N.arange(3):
+	P.plot(distances, ratio_deviations[i], color=colors[i], label="%s ADUs"%(thresholds[i]))
+
+handles, labels = canvas.get_legend_handles_labels()
+canvas.legend(handles, labels, loc='upper left')
+
+print "output_runs-ice_ratios.png saved."
+P.savefig(original_dir + "output_runs-ice_ratios.png")
+#P.savefig(original_dir + "output_runs-ice_ratios.png", format='eps')
+P.show()
+#P.close()
 
 water_pattern = []
 water_angavg = []
