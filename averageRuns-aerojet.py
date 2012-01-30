@@ -60,9 +60,15 @@ ratio100 = [[] for i in runs]
 thresholds = [20, 50, 100]
 ratios = [[] for i in thresholds]
 ratio_deviations = [[] for i in thresholds]
+sumhits_water = [[] for i in thresholds]
+sumhits_ice = [[] for i in thresholds]
+sumhits_tot = [[] for i in thresholds]
+len_runs = [len(i) for i in runs]
 
-fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
-canvas = fig.add_subplot(121)
+#fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+fig = P.figure(num=None, figsize=(25, 5), dpi=100, facecolor='w', edgecolor='k')
+#canvas = fig.add_subplot(121)
+canvas = fig.add_subplot(131)
 canvas.set_title("Thresholded Ice Ratios", fontsize='x-large')
 P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
 P.ylabel("Ice Ratio", fontsize='x-large')
@@ -82,6 +88,15 @@ for i in N.arange(len(runs)):
 	ratio_deviations[0].append(N.std(ratio20[i]))
 	ratio_deviations[1].append(N.std(ratio50[i]))
 	ratio_deviations[2].append(N.std(ratio100[i]))
+	sumhits_water[0].append(float(sum(nhits_water[i])))
+	sumhits_water[1].append(float(sum(nhits_water[i]) - sum(t50hits_water[i])))
+	sumhits_water[2].append(float(sum(nhits_water[i]) - sum(t50hits_water[i]) - sum(t100hits_water[i])))
+	sumhits_ice[0].append(float(sum(nhits_ice[i])))
+	sumhits_ice[1].append(float(sum(nhits_ice[i]) - sum(t50hits_ice[i])))
+	sumhits_ice[2].append(float(sum(nhits_ice[i]) - sum(t50hits_ice[i]) - sum(t100hits_ice[i])))
+	sumhits_tot[0].append(sum(nhits20[i]))
+	sumhits_tot[1].append(sum(nhits50[i]))
+	sumhits_tot[2].append(sum(nhits100[i]))
 	
 	P.scatter(distances[i], ratios[0][i], color='r', marker='o')
 	P.scatter(distances[i], ratios[1][i], color='g', marker='o')
@@ -93,7 +108,8 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper left')
 
-canvas = fig.add_subplot(122)
+#canvas = fig.add_subplot(122)
+canvas = fig.add_subplot(132)
 canvas.set_title("Standard Deviation of Runs", fontsize='x-large')
 P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
 P.ylabel("Standard Deviation", fontsize='x-large')
@@ -104,11 +120,29 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper left')
 
+canvas = fig.add_subplot(133)
+canvas.set_title("Number of Hits", fontsize='x-large')
+P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
+P.ylabel("Number of Hits", fontsize='x-large')
+
+for i in N.arange(3):
+	P.plot(distances, sumhits_water[i], color=colors[i], label="Water %s ADUs"%(thresholds[i]))
+	P.plot(distances, sumhits_ice[i], color=colors[i+3], label="Ice %s ADUs"%(thresholds[i]))
+	P.plot(distances, sumhits_tot[i], color=colors[i], label="Total %s ADUs"%(thresholds[i]))
+
+handles, labels = canvas.get_legend_handles_labels()
+canvas.legend(handles, labels, bbox_to_anchor = (1, 1), loc='upper left')
+
 print "output_runs-ice_ratios.png saved."
 P.savefig(original_dir + "output_runs-ice_ratios.png")
 #P.savefig(original_dir + "output_runs-ice_ratios.png", format='eps')
 P.show()
 #P.close()
+
+for i in N.arange(3):
+	txttag = "output_runs-ice_ratios-%sADUs.txt"%(thresholds[i])
+	N.array([distances, len_runs, sumhits_tot[i], sumhits_water[i], sumhits_ice[i], ratios[i], ratio_deviations[i]]).tofile(txttag, sep = "\n", format="%lf")
+	print "%s saved."%(txttag)
 
 water_pattern = []
 water_angavg = []
