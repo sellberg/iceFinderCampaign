@@ -23,6 +23,7 @@ parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxInte
 runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
 nhits_water = [[12077],[3308],[10143],[15702],[3508,789,4986],[320,203,104,2280,1157,919,207],[188,127,156,208,206],[30,75]] #r0151 actually has 1159 water hits but two had damaged Q-calibration
 nhits_ice = [[1],[7],[7],[11],[2,2,8],[51,42,22,266,127,499,140],[780,625,425,732,1705],[2865,630]]
+nevents = [[181089],[130074],[208489],[298050],[158756,62320,316507],[114978,194250,16146,309784,110923,211603,56893],[218817,166847,82800,198154,223197],[60809,213783]]
 # thresholded hits below 50 ADUs
 runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
 t50hits_water = [[4028],[536],[1305],[2032],[858,120,788],[78,64,14,545,305,498,102],[120,63,90,95,115],[6,36]]
@@ -57,9 +58,14 @@ nhits100 = [[] for i in runs]
 ratio20 = [[] for i in runs]
 ratio50 = [[] for i in runs]
 ratio100 = [[] for i in runs]
+hitrate20 = [[] for i in runs]
+hitrate50 = [[] for i in runs]
+hitrate100 = [[] for i in runs]
 thresholds = [20, 50, 100]
 ratios = [[] for i in thresholds]
 ratio_deviations = [[] for i in thresholds]
+hitrates = [[] for i in thresholds]
+hitrate_deviations = [[] for i in thresholds]
 sumhits_water = [[] for i in thresholds]
 sumhits_ice = [[] for i in thresholds]
 sumhits_tot = [[] for i in thresholds]
@@ -77,10 +83,13 @@ for i in N.arange(len(runs)):
 	for j in N.arange(len(runs[i])):
 		nhits20[i].append(float(nhits_water[i][j] + nhits_ice[i][j]))
 		ratio20[i].append(nhits_ice[i][j]/nhits20[i][j])
+		hitrate20[i].append(nhits20[i][j]/nevents[i][j])
 		nhits50[i].append(float(nhits_water[i][j] - t50hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j]))
 		ratio50[i].append((nhits_ice[i][j] - t50hits_ice[i][j])/nhits50[i][j])
+		hitrate50[i].append(nhits50[i][j]/nevents[i][j])
 		nhits100[i].append(float(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j]))
 		ratio100[i].append((nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j])/nhits100[i][j])
+		hitrate100[i].append(nhits100[i][j]/nevents[i][j])
 	
 	ratios[0].append(N.mean(ratio20[i]))
 	ratios[1].append(N.mean(ratio50[i]))
@@ -88,6 +97,12 @@ for i in N.arange(len(runs)):
 	ratio_deviations[0].append(N.std(ratio20[i]))
 	ratio_deviations[1].append(N.std(ratio50[i]))
 	ratio_deviations[2].append(N.std(ratio100[i]))
+	hitrates[0].append(sum(nhits20[i])/sum(nevents[i]))
+	hitrates[1].append(sum(nhits50[i])/sum(nevents[i]))
+	hitrates[2].append(sum(nhits100[i])/sum(nevents[i]))
+	hitrate_deviations[0].append(N.std(hitrate20[i]))
+	hitrate_deviations[1].append(N.std(hitrate50[i]))
+	hitrate_deviations[2].append(N.std(hitrate100[i]))
 	sumhits_water[0].append(float(sum(nhits_water[i])))
 	sumhits_water[1].append(float(sum(nhits_water[i]) - sum(t50hits_water[i])))
 	sumhits_water[2].append(float(sum(nhits_water[i]) - sum(t50hits_water[i]) - sum(t100hits_water[i])))
@@ -135,6 +150,57 @@ canvas.legend(handles, labels, bbox_to_anchor = (1, 1), loc='upper left')
 
 print "output_runs-ice_ratios.png saved."
 P.savefig(original_dir + "output_runs-ice_ratios.png")
+#P.savefig(original_dir + "output_runs-ice_ratios.png", format='eps')
+P.show()
+#P.close()
+
+# SECOND PLOT
+fig = P.figure(num=None, figsize=(8, 5), dpi=100, facecolor='w', edgecolor='k')
+canvas = fig.add_subplot(111)
+canvas.set_title("Number of Hits", fontsize='x-large')
+P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
+P.ylabel("Number of Hits", fontsize='x-large')
+
+for i in N.arange(3):
+	P.fill_between(distances, sumhits_water[i], color=colors[i])
+	P.plot(distances, sumhits_ice[i], color=colors[i+3], label="Ice %s ADUs"%(thresholds[i]))
+	P.plot(distances, sumhits_tot[i], color=colors[i], label="Total %s ADUs"%(thresholds[i]))
+
+handles, labels = canvas.get_legend_handles_labels()
+canvas.legend(handles, labels, loc='upper right')
+
+print "output_runs-ice_hits.png saved."
+P.savefig(original_dir + "output_runs-ice_hits.png")
+#P.savefig(original_dir + "output_runs-ice_hits.png", format='eps')
+P.show()
+#P.close()
+
+# THIRD PLOT
+fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+canvas = fig.add_subplot(121)
+canvas.set_title("Hitrates", fontsize='x-large')
+P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
+P.ylabel("Hitrate", fontsize='x-large')
+
+for i in N.arange(3):
+	P.plot(distances, hitrates[i], color=colors[i], label="%s ADUs"%(thresholds[i]))
+
+handles, labels = canvas.get_legend_handles_labels()
+canvas.legend(handles, labels, loc='upper right')
+
+canvas = fig.add_subplot(122)
+canvas.set_title("Hitrate Deviations of Runs", fontsize='x-large')
+P.xlabel("Sample-Nozzle Distance (mm)", fontsize='x-large')
+P.ylabel("Standard Deviation", fontsize='x-large')
+
+for i in N.arange(3):
+	P.plot(distances, hitrate_deviations[i], color=colors[i], label="%s ADUs"%(thresholds[i]))
+
+handles, labels = canvas.get_legend_handles_labels()
+canvas.legend(handles, labels, loc='upper left')
+
+print "output_runs-ice_hitrates.png saved."
+P.savefig(original_dir + "output_runs-ice_hitrates.png")
 #P.savefig(original_dir + "output_runs-ice_ratios.png", format='eps')
 P.show()
 #P.close()
