@@ -207,7 +207,7 @@ P.show()
 
 for i in N.arange(3):
 	txttag = "output_runs-ice_ratios-%sADUs.txt"%(thresholds[i])
-	N.array([distances, len_runs, sumhits_tot[i], sumhits_water[i], sumhits_ice[i], ratios[i], ratio_deviations[i]]).tofile(txttag, sep = "\n", format="%lf")
+	N.array([distances, len_runs, sumhits_tot[i], sumhits_water[i], sumhits_ice[i], ratios[i], ratio_deviations[i], hitrates[i], hitrate_deviations[i]]).tofile(txttag, sep = "\n", format="%lf")
 	print "%s saved."%(txttag)
 
 water_pattern = []
