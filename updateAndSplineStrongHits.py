@@ -202,7 +202,7 @@ class img_class (object):
 		
 		P.plot(self.inangavgQ, self.inangavg)
 		P.xlabel("Q (A-1)")
-		P.ylabel("I(Q) (ADUs)")
+		P.ylabel("I(Q) (ADUs/srad)")
 		P.show()
 
 
