@@ -117,6 +117,15 @@ for i in N.arange(len(runs)):
 			sys.exit(1)
 
 
+# STATISTICS
+for j in N.arange(len(runs)):
+	print "Statistics: d=%.1f mm, %d ADUs" % (distances[j], options.threshold)
+	npeaks = N.array(ice_npeaks[j])
+	nmean = N.mean(npeaks)
+	nstd = N.std(npeaks)
+	nmax = N.max(npeaks)
+	print "\tmean = %f, std = %f, max = %f" % (nmean, nstd, nmax)
+
 # PLOT DATA
 fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
 canvas = fig.add_subplot(121)
