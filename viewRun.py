@@ -3,11 +3,9 @@ import numpy as N
 from numpy import linalg as LA
 import h5py as H
 import glob as G
-import os 
-import re
-import time
 import pylab as P
 import operator as O
+import sys, os, re, shutil, subprocess, time
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
 
