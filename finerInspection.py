@@ -22,9 +22,23 @@ parser.add_option("-L", "--lowerBoundType2", action="store", type="int", dest="l
 parser.add_option("-U", "--upperBoundType2", action="store", type="int", dest="upperBoundType2", help="sets upper bound of pixels for max intensity of angular average below which hits are automatically sorted to type2 (default:1150)", default=1150)
 (options, args) = parser.parse_args()
 
-#Tagging directories with the correct names
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+########################################################
+# Edit this variable accordingly
+# Files are read for source_dir/runtag and
+# written to write_dir/runtag.
+# Be careful of the trailing "/"; 
+# ensure you have the necessary read/write permissions.
+########################################################
+# SCRATCH
+#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# RES
+#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+# FTC
+source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/' 
 write_anomaly_dir = write_dir
@@ -195,8 +209,8 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-#		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
@@ -226,8 +240,8 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-#		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)

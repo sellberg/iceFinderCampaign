@@ -21,11 +21,11 @@ parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxInte
 
 # adapted to droplet dispenser (water only)
 # with r0102
-runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97],[102]]
-nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820],[1675]]
-dhits_water = [[0],[83],[21],[0,4],[22],[6],[11,0],[0],[0],[]]
-colors = ['b','g','r','c','m','y','k']
-temperatures = [290,260,254,249,244,243,240,235,233,232]
+#runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97],[102]]
+#nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820],[1675]]
+#dhits_water = [[0],[83],[21],[0,4],[22],[6],[11,0],[0],[0],[]]
+#colors = ['b','g','r','c','m','y','k']
+#temperatures = [290,260,254,249,244,243,240,235,233,232]
 # without r0102
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
 nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820]]
@@ -43,16 +43,24 @@ t100hits_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[1453],[1020]]
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [290,260,254,249,244,243,240,235,233]
 temperatures = [283,255,249,245,241,240,237,233,231]
+#temperatures = [283,257,250,246,241,241,237,233,231] # FINAL temperatures LicThesis
 #distances = [0.750000,10.000000,15.681899,20.681899,30.000000,30.699899,40.699899,60.699899,70.649900]
-distances = [0.750000,10.011910,15.798895,20.789092,30.006612,30.738471,40.759723,60.710063,70.662700]
+distances = [0.750000,10.011910,15.798895,20.789092,30.006612,30.738471,40.759723,60.710063,70.662700] # FINAL distances
 
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
+# SCRATCH
+#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+#sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
+# RES & FTC
+source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+sorting_dir = "/reg/data/ana12/cxi/cxi25410/res/iceFinderCampaign/"
+
 original_dir = os.getcwd() + '/'
 run_tag = "r0144"
 
 water_angavg = []
 water_pattern = []
+water_correlation = []
 Q_angavg = []
 
 colmax = options.maxIntens
@@ -185,6 +193,7 @@ class img_class (object):
 for i in N.arange(len(runs)):
 	temp_water_angavg = []
 	temp_water_pattern = []
+	temp_water_correlation = []
 	temp_Q_angavg = []
 	for j in N.arange(len(runs[i])):
 		if (runs[i][j] < 100):
@@ -197,8 +206,9 @@ for i in N.arange(len(runs)):
 			if os.path.exists(sorting_dir + run_dir + run_tag + '_type0.h5'):
 				print 'found: ' + sorting_dir + run_dir + run_tag + '_type0.h5'
 				f = H.File(sorting_dir + run_dir + run_tag + '_type0.h5', 'r')
-				temp_water_pattern.append(N.array(f['data']['diffraction']))
 				temp_water_angavg.append(N.array(f['data']['angavg']))
+				temp_water_pattern.append(N.array(f['data']['diffraction']))
+				temp_water_correlation.append(N.array(f['data']['correlation']))
 				temp_Q_angavg.append(N.array(f['data']['angavgQ']))
 				f.close()
 			else:
@@ -223,16 +233,22 @@ for i in N.arange(len(runs)):
 	P.close()
 	
 	
-	sumwater = float(sum(nhits_water[i])-sum(dhits_water[i])-sum(t50hits_water[i])-sum(t100hits_water[i]))
+	sumwater = float(sum(nhits_water[i]))
+	#sumwater = float(sum(nhits_water[i])-sum(dhits_water[i])-sum(t50hits_water[i]))
+	#sumwater = float(sum(nhits_water[i])-sum(dhits_water[i])-sum(t50hits_water[i])-sum(t100hits_water[i]))
 	for j in N.arange(len(runs[i])):
-		nwater = nhits_water[i][j]-dhits_water[i][j]-t50hits_water[i][j]-t100hits_water[i][j]
+		nwater = nhits_water[i][j]
+		#nwater = nhits_water[i][j]-dhits_water[i][j]-t50hits_water[i][j]
+		#nwater = nhits_water[i][j]-dhits_water[i][j]-t50hits_water[i][j]-t100hits_water[i][j]
 		if (nwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
 			temp_water_pattern[j] *= nwater/sumwater
+			temp_water_correlation[j] *= nwater/sumwater
 	
 	
 	water_angavg.append(N.array(temp_water_angavg).sum(axis=0))
 	water_pattern.append(N.array(temp_water_pattern).sum(axis=0))
+	water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
 	Q_angavg.append(N.array(temp_Q_angavg).mean(axis=0))
 	
 	currImg = img_class(water_pattern[i], water_angavg[i], [int(sumwater), temperatures[i]], "output_runs-T%sK-pattern"%(temperatures[i]))
@@ -246,7 +262,7 @@ canvas = fig.add_subplot(121)
 #P.ylabel("Average Intensity (ADUs)", fontsize='x-large')
 canvas.set_title("Water")
 P.xlabel("Q (Angstroms-1)")
-P.ylabel("Average Intensity (ADUs)")
+P.ylabel("Average Intensity (ADUs/srad)")
 for i in N.arange(len(runs)):
 	#if i > 3:
 		#P.plot(Q_angavg[i], water_angavg[i], color=colors[i-4], label="T = %s K"%(temperatures[i]))
@@ -262,15 +278,20 @@ P.savefig(original_dir + "output_runs-droplet_dispenser-all_T-angavg_Q.png")
 P.close()
 
 #save to file
-f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_100ADUs.h5", 'w')
+f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_20ADUs.h5", 'w')
+#f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_50ADUs.h5", 'w')
+#f = H.File(original_dir + "output_runs-droplet_dispenser-all_T+Q_100ADUs.h5", 'w')
 entry_1 = f.create_group("/data")
 for i in N.arange(len(runs)):
 	entry_2 = f.create_group("/data/%.1fmm"%(distances[i]))
 	entry_3 = f.create_group("/data/%.1fmm/water"%(distances[i]))
 	entry_3.create_dataset("diffraction", data=water_pattern[i])
+	entry_3.create_dataset("correlation", data=water_correlation[i])
 	entry_3.create_dataset("angavg", data=water_angavg[i])
 	entry_3.create_dataset("angavg_Q", data=Q_angavg[i])
 
 f.close()
-print "Successfully updated output_runs-droplet_dispenser-all_T+Q_100ADUs.h5"
+print "Successfully updated output_runs-droplet_dispenser-all_T+Q_20ADUs.h5"
+#print "Successfully updated output_runs-droplet_dispenser-all_T+Q_50ADUs.h5"
+#print "Successfully updated output_runs-droplet_dispenser-all_T+Q_100ADUs.h5"
 

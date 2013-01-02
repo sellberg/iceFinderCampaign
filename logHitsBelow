@@ -1,0 +1,18 @@
+#!/bin/bash
+# removes duplicates and sorts the hits in the .txt file
+# takes 1 input: <FILENAME>
+
+if [ $# -eq 1 ]
+then
+    cd $1/below50ADUs/
+    ls LCLS*angavg.h5 > ../below50ADUs.txt
+    echo "created $1below50ADUs.txt"
+    cp LCLS*angavg.h5 ../.
+    cd ../below100ADUs/
+    ls LCLS*angavg.h5 > ../below100ADUs.txt
+    echo "created $1below100ADUs.txt"
+    cp LCLS*angavg.h5 ../.
+else
+    echo to log hits below threshold: ./logHitBelows output_rXXXX/
+fi
+

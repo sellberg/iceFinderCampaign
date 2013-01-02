@@ -17,6 +17,8 @@ parser.add_option("-m", "--min", action="store", type="float", dest="min_value",
 parser.add_option("-x", "--max", action="store", type="float", dest="max_value", help="ignore intensities above this q-value in splined angular average (default: 3.48 A-1)", metavar="MAX_VALUE", default="3.48")
 parser.add_option("-d", "--delta", action="store", type="float", dest="delta_value", help="spline intensities with this interval in angular average (default: 0.001 A-1)", metavar="DELTA_VALUE", default="0.001")
 parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  
+parser.add_option("-e", "--exclude", action="store_true", dest="exclude", help="excludes hits from splining/averaging", default=False)
+parser.add_option("-f", "--excludefile", action="store", type="string", dest="excludeFile", help="name of text file with hits to exlude (default: below100ADUs)", metavar="EXCLUDE_FILENAME", default="below100ADUs")
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 (options, args) = parser.parse_args()
 
@@ -27,10 +29,18 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="
 # Be careful of the trailing "/"; 
 # ensure you have the necessary read/write permissions.
 ########################################################
+# TEST
 #source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/sellberg/test_runs/"
 #ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/sellberg/test_runs/"
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# SCRATCH
+#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# RES
+#source_dir = "/reg/data/ana12/cxi/cxi25410/res/"
+#ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/res/"
+# FTC
+source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/"
+ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/ftc/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'

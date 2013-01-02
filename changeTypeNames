@@ -1,0 +1,54 @@
+#!/bin/bash
+# change names of the type averages for a run
+# takes 1 or 2 or 3 inputs: <RUN_DIR> <NEW_NAME> <DIR_TAG>
+
+if [ $# -eq 1 ]
+then
+    run=`echo $1 | sed -e 's/output_//g'`
+    mv $1/$run'_type0.h5' $1/$run'_type0-old.h5'
+    mv $1/$run'_type0.png' $1/$run'_type0-old.png'
+    echo "Moved "$run'_type0.* to '$run'_type0-old.*'
+    
+    for i in {1..9}; do
+	if test -e $1/'type'$i; then
+	    cd 'type'$i
+	    mv $1/'type'$i/$run'_type'$i'.h5' $1/'type'$i/$run'_type'$i'-old.h5'
+	    mv $1/'type'$i/$run'_type'$i'.png' $1/'type'$i/$run'_type'$i'-old.png'
+	    echo "Moved "$run'_type'$i'.* to '$run'_type'$i'-old.*'
+	fi
+    done
+    
+elif [ $# -eq 2 ]
+then
+    run=`echo $1 | sed -e 's/output_//g'`
+    mv $1/$run'_type0.h5' $1/$run'_type0-'$2'.h5'
+    mv $1/$run'_type0.png' $1/$run'_type0-'$2'.png'
+    echo "Moved "$run'_type0'$i'.* to '$run'_type0-'$2'.*'
+    
+    for i in {1..9}; do
+	if test -e $1/'type'$i; then
+	    mv $1/'type'$i/$run'_type'$i'.h5' $1/'type'$i/$run'_type'$i'-'$2'.h5'
+	    mv $1/'type'$i/$run'_type'$i'.png' $1/'type'$i/$run'_type'$i'-'$2'.png'
+	    echo "Moved "$run'_type'$i'.* to '$run'_type'$i'-'$2'.*'
+	fi
+    done
+    
+elif [ $# -eq 3 ]
+then
+    run=`echo $1 | sed -e 's/'$3'_//g'`
+    mv $1/$run'_type0.h5' $1/$run'_type0-'$2'.h5'
+    mv $1/$run'_type0.png' $1/$run'_type0-'$2'.png'
+    echo "Moved "$run'_type0'$i'.* to '$run'_type0-'$2'.*'
+
+    for i in {1..9}; do
+        if test -e $1/'type'$i; then
+            mv $1/'type'$i/$run'_type'$i'.h5' $1/'type'$i/$run'_type'$i'-'$2'.h5'
+            mv $1/'type'$i/$run'_type'$i'.png' $1/'type'$i/$run'_type'$i'-'$2'.png'
+            echo "Moved "$run'_type'$i'.* to '$run'_type'$i'-'$2'.*'
+        fi
+    done
+
+else
+    echo "to cange names of type averages: ./changeTypeNames output_rXXXX newname (optional) dirtag (optional)"
+fi
+

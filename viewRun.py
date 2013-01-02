@@ -19,8 +19,23 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="
 parser.add_option("-c", "--cutoffFluctuation", action="store", type="float", dest="cutoffFluc", help="masks out pixels with relative fluctuations below this value", default=0.0)
 (options, args) = parser.parse_args()
 
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+########################################################
+# Edit this variable accordingly
+# Files are read for source_dir/runtag and
+# written to write_dir/runtag.
+# Be careful of the trailing "/"; 
+# ensure you have the necessary read/write permissions.
+########################################################
+# SCRATCH
+#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# RES
+#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+# FTC
+source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/' 
 write_anomaly_dir = write_dir 

@@ -16,6 +16,10 @@ parser.add_option("-r", "--run", action="store", type="string", dest="runNumber"
 parser.add_option("-m", "--min", action="store", type="float", dest="min_value", help="ignore intensities below this q-value in splined angular average (default: 0.06 A-1)", metavar="MIN_VALUE", default="0.06")
 parser.add_option("-x", "--max", action="store", type="float", dest="max_value", help="ignore intensities above this q-value in splined angular average (default: 3.48 A-1)", metavar="MAX_VALUE", default="3.48")
 parser.add_option("-d", "--delta", action="store", type="float", dest="delta_value", help="spline intensities with this interval in angular average (default: 0.001 A-1)", metavar="DELTA_VALUE", default="0.001")
+parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="copies the xaca files along with the angular averages", default=False)
+#parser.add_option("-c", "--xcca", action="store_true", dest="xcca", help="copies the xcca files along with the angular averages", default=False)
+parser.add_option("-q", "--nq", action="store", type="int", dest="nQ", help="number of Q bins in correlation file (default: 151)", metavar="N_Q", default="151")
+parser.add_option("-p", "--nphi", action="store", type="int", dest="nPhi", help="number of Phi bins in correlation file (default: 181)", metavar="N_PHI", default="181")
 parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 (options, args) = parser.parse_args()
@@ -27,10 +31,15 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="
 # Be careful of the trailing "/"; 
 # ensure you have the necessary read/write permissions.
 ########################################################
-#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/sellberg/test_runs/"
-#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/sellberg/test_runs/"
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# SCRATCH
+#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# RES
+#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+# FTC
+source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'
@@ -99,21 +108,29 @@ if (sH5.issubset(sFound)):
 	for fname in h5files:
 		angAvgName = ang_avg_dir + runtag + '/' + fname
 		diffractionName = source_dir + runtag + '/' + re.sub("-angavg",'',fname)
+		correlationName = source_dir + runtag + '/' + re.sub("-angavg","-xaca",fname)
 		if os.path.exists(diffractionName):
-			#Check if fname is part of type0
-			if (fname in set(foundTypeFiles[0])):
-				shutil.copyfile(angAvgName, write_dir+fname)
-				fcounter += 1
-				if (options.verbose and (round(((fcounter*100)%numFiles)/100)==0)):
-					print str(fcounter) + " of " + str(numFiles) + " files copied (" + str(fcounter*100/numFiles) + "%)"
+			if os.path.exists(correlationName) or not options.xaca:
+				#Check if fname is part of type0
+				if (fname in set(foundTypeFiles[0])):
+					shutil.copyfile(angAvgName, write_dir+fname)
+					if options.xaca:
+						shutil.copyfile(correlationName, write_dir+re.sub("-angavg","-xaca",fname))
+					fcounter += 1
+					if (options.verbose and (round(((fcounter*100)%numFiles)/100)==0)):
+						print str(fcounter) + " of " + str(numFiles) + " files copied (" + str(fcounter*100/numFiles) + "%)"
+				else:
+					for i in range(1, numTypes):
+						if (fname in set(foundTypeFiles[i])):
+							shutil.copyfile(angAvgName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+fname)
+							shutil.copyfile(diffractionName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+re.sub("-angavg",'',fname))
+							if options.xaca:
+								shutil.copyfile(correlationName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+re.sub("-angavg","-xaca",fname))
+							fcounter += 1
+							if (options.verbose and (round(((fcounter*100)%numFiles)/100)==0)):
+								print str(fcounter) + " of " + str(numFiles) + " files copied (" + str(fcounter*100/numFiles) + "%)"
 			else:
-				for i in range(1, numTypes):
-					if (fname in set(foundTypeFiles[i])):
-						shutil.copyfile(angAvgName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+fname)
-						shutil.copyfile(diffractionName, write_dir+'type'+str(foundTypeNumbers[i])+'/'+re.sub("-angavg",'',fname))
-						fcounter += 1
-						if (options.verbose and (round(((fcounter*100)%numFiles)/100)==0)):
-							print str(fcounter) + " of " + str(numFiles) + " files copied (" + str(fcounter*100/numFiles) + "%)"
+				print "The correlation file %s does not exist, ignoring %s" % (correlationName, fname)
 		else:
 			print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
 	print "Updated %d of %d files successfully." % (fcounter, numFiles)
@@ -212,6 +229,7 @@ class img_class (object):
 
 avgArr = N.zeros((numTypes,1760,1760))
 avgRawArr = N.zeros((numTypes,1480,1552))
+avgCorrArr = N.zeros((numTypes,options.nQ,options.nPhi))
 avgAngAvgQ = N.arange(options.min_value,options.max_value+options.delta_value,options.delta_value)
 angAvgLength = int((options.max_value-options.min_value)/options.delta_value)+1
 avgAngAvg = N.zeros((numTypes,angAvgLength))
@@ -233,24 +251,33 @@ for currentlyExamining in range(numTypes):
 				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
 					print str(fcounter) + " of " + str(numFilesInDir) + " files splined (" + str(fcounter*100/numFilesInDir) + "%)"
 				diffractionName = source_dir + runtag + "/" + re.sub("-angavg",'',fname)
+				correlationName = source_dir + runtag + "/" + re.sub("-angavg","-xaca",fname)
 				if os.path.exists(diffractionName):
-					f = H.File(diffractionName, 'r')
-					d = N.array(f['/data/data']).astype(float)
-					draw = N.array(f['/data/rawdata']).astype(float)
-					currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
-					f.close()
-					angAvgName = fname
-					f = H.File(angAvgName, 'r')
-					davg = N.array(f['data']['data'])
-					f.close()
-					f = I.interp1d(davg[0], davg[1])
-					davg = f(avgAngAvgQ)
-					wavelengths[currentlyExamining].append(currWavelengthInAngs)
-					avgArr[currentlyExamining] += d
-					avgRawArr[currentlyExamining] += draw
-					avgAngAvg[currentlyExamining] += davg
-					typeOccurences[currentlyExamining] += 1
-					fcounter += 1
+					if os.path.exists(correlationName) or not options.xaca:
+						f = H.File(diffractionName, 'r')
+						d = N.array(f['/data/data']).astype(float)
+						draw = N.array(f['/data/rawdata']).astype(float)
+						currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
+						f.close()
+						if options.xaca:
+							f = H.File(correlationName, 'r')
+							dcorr = N.array(f['/data/data']).astype(float)	#currently saved as float (32-bit) although io->writeToHDF5() specifies it as double (64-bit)
+							f.close()
+							avgCorrArr[currentlyExamining] += dcorr
+						angAvgName = fname
+						f = H.File(angAvgName, 'r')
+						davg = N.array(f['data']['data'])
+						f.close()
+						f = I.interp1d(davg[0], davg[1])
+						davg = f(avgAngAvgQ)
+						wavelengths[currentlyExamining].append(currWavelengthInAngs)
+						avgArr[currentlyExamining] += d
+						avgRawArr[currentlyExamining] += draw
+						avgAngAvg[currentlyExamining] += davg
+						typeOccurences[currentlyExamining] += 1
+						fcounter += 1
+					else:
+						print "The correlation file %s does not exist, ignoring %s" % (correlationName, fname)
 				else:
 					print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
 			os.chdir(originaldir)
@@ -280,6 +307,8 @@ for dirName in foundTypes:
 		avgArr[storeFlag] /= typeOccurences[storeFlag]
 		avgRawArr[storeFlag] /= typeOccurences[storeFlag]
 		avgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
+		if options.xaca:
+			avgCorrArr[storeFlag] /= typeOccurences[storeFlag]
 		if (storeFlag > 0):
 			typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
 		else:
@@ -290,9 +319,26 @@ for dirName in foundTypes:
 		entry_1 = f.create_group("/data")
 		entry_1.create_dataset("diffraction", data=avgArr[storeFlag])
 		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
+		if options.xaca:
+			entry_1.create_dataset("correlation", data=avgCorrArr[storeFlag])
 		entry_1.create_dataset("angavg", data=avgAngAvg[storeFlag])	
 		entry_1.create_dataset("angavgQ", data=avgAngAvgQ)	
 		f.close()
 		print "Successfully updated %s" % (dirName +'/'+ typeTag + ".h5")
 	storeFlag += 1
+
+
+storeFlag = 0
+
+#Loop over each type to view correlation
+if options.xaca:
+	for dirName in foundTypes:
+		if (typeOccurences[storeFlag] > 0.):
+			if (storeFlag > 0):
+				typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
+			else:
+				typeTag = runtag+'_type0'
+			currImg = img_class(avgCorrArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag+'_xaca', meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
+			currImg.draw_img_for_viewing()
+		storeFlag += 1
 
