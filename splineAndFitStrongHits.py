@@ -107,7 +107,7 @@ if (len(sFound) != len(foundFiles)):
 
 
 #Global parameters
-colmax = 1000
+colmax = 500
 colmin = 0
 storeFlag = 0
 
@@ -184,7 +184,7 @@ class img_class (object):
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
 		if (success):
-			canvas.set_title("AngAvg; S1 = %.3f A-1, S2 = %.3f A-1" % (p1[1], p1[4]))
+			canvas.set_title("AngAvg; S1 = %.3f A-1, S2 = %.3f A-1" % (p1[1], p1[4]), fontsize='medium')
 		else:
 			canvas.set_title("Angular Average")
 		
@@ -203,6 +203,10 @@ class img_class (object):
 		
 		P.xlabel("Q (A-1)")
 		P.ylabel("I(Q) (ADU/srad)")
+		#pngtag = foundTypes[storeFlag] + '/' + "%s.png" % (self.filename)
+		#P.savefig(pngtag)
+		#print "%s saved." % (pngtag)
+		#P.close()
 		P.show()
 
 
@@ -240,8 +244,6 @@ for currentlyExamining in range(numTypes):
 			os.chdir(dirName)
 			for fname in foundTypeFiles[currentlyExamining]:
 				storeFlag = foundTypeNumbers[currentlyExamining]
-				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
-					print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
 				diffractionName = source_dir + runtag + "/" + re.sub("-angavg",'',fname)
 				if os.path.exists(diffractionName):
 					angAvgName = fname
@@ -287,6 +289,9 @@ for currentlyExamining in range(numTypes):
 					fcounter += 1
 				else:
 					print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
+				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
+					print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
+				
 			os.chdir(originaldir)
 			t2 = time.time()
 			print "Time taken for averaging type" + str(storeFlag) + " = " + str(t2-t1) + " s."
@@ -387,7 +392,32 @@ for dirName in foundTypes:
 		P.ylabel("Attenuation")
 		P.plot(fitdeltaq, attenuations[storeFlag], 'r.')
 		
-		pngtag = dirName +'/'+ typeTag + "-peak_fit_corr.png"
+		pngtag = dirName +'/'+ typeTag + "-peak_fit_corr-dq.png"
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		#P.show()
+		P.close()
+		
+		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+		canvas = fig.add_subplot(131)
+		canvas.set_title("Correlation")
+		P.xlabel("Peak1 Intensity (ADU/srad)")
+		P.ylabel("Peak1 FWHM (A-1)")
+		P.plot(fitint1[storeFlag], fitfwhm1[storeFlag], 'r.')
+		
+		canvas = fig.add_subplot(132)
+		canvas.set_title("Correlation")
+		P.xlabel("Peak1 Intensity (ADU/srad)")
+		P.ylabel("Max Intensity (ADU/srad)")
+		P.plot(fitint1[storeFlag], maxIntensities[storeFlag], 'r.')
+		
+		canvas = fig.add_subplot(133)
+		canvas.set_title("Correlation")
+		P.xlabel("Peak2 Intensity (ADU/srad)")
+		P.ylabel("Peak2 FWHM (A-1)")
+		P.plot(fitint2[storeFlag], fitfwhm2[storeFlag], 'r.')
+		
+		pngtag = dirName +'/'+ typeTag + "-peak_fit_corr-int.png"
 		P.savefig(pngtag)
 		print "%s saved." % (pngtag)
 		#P.show()
@@ -399,11 +429,16 @@ for dirName in foundTypes:
 		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
 		entry_1.create_dataset("angavg", data=avgAngAvg[storeFlag])
 		entry_1.create_dataset("angavgQ", data=avgAngAvgQ)
-		entry_1.create_dataset("s1", data=fitpos1[storeFlag])
-		entry_1.create_dataset("s2", data=fitpos2[storeFlag])
-		entry_1.create_dataset("attenuation", data=attenuations[storeFlag])
-		entry_1.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
-		entry_1.create_dataset("intensityMax", data=maxIntensities[storeFlag])
+		entry_2 = f.create_group("/data/peakFit")
+		entry_2.create_dataset("int1", data=fitint1[storeFlag])
+		entry_2.create_dataset("int2", data=fitint2[storeFlag])
+		entry_2.create_dataset("pos1", data=fitpos1[storeFlag])
+		entry_2.create_dataset("pos2", data=fitpos2[storeFlag])
+		entry_2.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
+		entry_2.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
+		entry_2.create_dataset("attenuation", data=attenuations[storeFlag])
+		entry_2.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
+		entry_2.create_dataset("intensityMax", data=maxIntensities[storeFlag])
 		f.close()
 		print "Successfully updated %s" % (dirName +'/'+ typeTag + ".h5")
 		
