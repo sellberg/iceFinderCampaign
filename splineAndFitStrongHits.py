@@ -167,12 +167,13 @@ class img_class (object):
 			P.draw()
 	
 	def draw_img_for_viewing(self):
-		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
-		index = N.array([((self.inangavgQ > options.S1_min)[i] and (self.inangavgQ < options.S1_max)[i]) or ((self.inangavgQ > options.S2_min)[i] and (self.inangavgQ < options.S2_max)[i]) for i in range(len(self.inangavgQ))])
-		[p1, success] = optimize.leastsq(errfunc, p0[:], args=(self.inangavgQ[index],self.inangavg[index]))
 		print "Press 'p' to save PNG."
 		global colmax
 		global colmin
+		global p1
+		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+		index = N.array([((self.inangavgQ > options.S1_min)[i] and (self.inangavgQ < options.S1_max)[i]) or ((self.inangavgQ > options.S2_min)[i] and (self.inangavgQ < options.S2_max)[i]) for i in range(len(self.inangavgQ))])
+		[p1, success] = optimize.leastsq(errfunc, p0[:], args=(self.inangavgQ[index],self.inangavg[index]))
 		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
 		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_viewing)
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
@@ -183,7 +184,7 @@ class img_class (object):
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
 		if (success):
-			canvas.set_title("S1 = %.3f A-1, S2 = %.3f A-1" % (p1[1], p1[4]))
+			canvas.set_title("AngAvg; S1 = %.3f A-1, S2 = %.3f A-1" % (p1[1], p1[4]))
 		else:
 			canvas.set_title("Angular Average")
 		
@@ -291,7 +292,7 @@ for currentlyExamining in range(numTypes):
 			print "Time taken for averaging type" + str(storeFlag) + " = " + str(t2-t1) + " s."
 			if (options.verbose):
 				print "Mean wavelength = " + str(N.mean(wavelengths[currentlyExamining])) + " A."
-				print "Relative change in wavelength = " + str(N.std(wavelengths[currentlyExamining])/N.mean(wavelengths[currentlyExamining])) + " A."
+				print "Relative change in wavelength = " + str(N.std(wavelengths[currentlyExamining])/N.mean(wavelengths[currentlyExamining]))
 				print "max-min wavelength = " + str(N.max(wavelengths[currentlyExamining]) - N.min(wavelengths[currentlyExamining])) + " A."
 		else:
 			print "Found %d angavg files in %s/ that have not been updated. Should update all files before splining, aborting." % (len(set(foundTypeFiles[currentlyExamining])-sH5), dirName)
@@ -324,6 +325,9 @@ for dirName in foundTypes:
 		else:
 			typeTag = runtag+'_type0'
 		
+		currImg = img_class(avgArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag, meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
+		currImg.draw_img_for_viewing()
+		
 		#Gaussian peak fit statistics
 		fitdeltaq = N.array(fitpos2[storeFlag]) - N.array(fitpos1[storeFlag])
 		
@@ -336,6 +340,7 @@ for dirName in foundTypes:
 		pos1_hist, hist_bins = N.histogram(fitpos1[storeFlag], bins=hist_bins)
 		pos1_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos1_hist))]
 		P.plot(pos1_bins, pos1_hist)
+		P.axvline(p1[1],0,max(pos1_hist),color='r')
 		
 		canvas = fig.add_subplot(132)
 		canvas.set_title("Histogram")
@@ -345,6 +350,7 @@ for dirName in foundTypes:
 		deltaq_hist, hist_bins = N.histogram(fitdeltaq, bins=hist_bins)
 		deltaq_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(deltaq_hist))]
 		P.plot(deltaq_bins, deltaq_hist)
+		P.axvline(p1[4]-p1[1],0,max(deltaq_hist),color='r')
 		
 		canvas = fig.add_subplot(133)
 		canvas.set_title("Histogram")
@@ -354,6 +360,7 @@ for dirName in foundTypes:
 		pos2_hist, hist_bins = N.histogram(fitpos2[storeFlag], bins=hist_bins)
 		pos2_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos2_hist))]
 		P.plot(pos2_bins, pos2_hist)
+		P.axvline(p1[4],0,max(pos2_hist),color='r')
 		
 		pngtag = dirName +'/'+ typeTag + "-peak_fit_hist.png"
 		P.savefig(pngtag)
@@ -386,8 +393,6 @@ for dirName in foundTypes:
 		#P.show()
 		P.close()
 		
-		currImg = img_class(avgArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag, meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
-		currImg.draw_img_for_viewing()
 		f = H.File(dirName +'/'+ typeTag + ".h5", "w")
 		entry_1 = f.create_group("/data")
 		entry_1.create_dataset("diffraction", data=avgArr[storeFlag])
