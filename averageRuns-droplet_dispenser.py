@@ -29,10 +29,10 @@ parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxInte
 # without r0102
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
 nhits_water = [[2610],[7860],[3900],[381,3100],[3000],[2280],[1225,1480],[1880],[1820]]
-# with resorted r0063
+# with resorted r0063 (current in iceFinderCampaign)
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
 nhits_water = [[2610],[7860],[3900],[377,3100],[3000],[2280],[1225,1480],[1880],[1820]]
-# hits with damged Q-calibration
+# hits with damged Q-calibration (THESE ARE NOW INCLUDED WITH THE NEW CORRECTIONS)
 dhits_water = [[0],[83],[21],[0,4],[22],[6],[11,0],[0],[0]]
 # thresholded hits below 50 ADUs
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
@@ -202,7 +202,8 @@ for i in N.arange(len(runs)):
 			run_tag = "r0%s"%(runs[i][j])
 		run_dir =  'output_' + run_tag + '/'
 		#water
-		if ((nhits_water[i][j]-dhits_water[i][j]) != 0):
+		if (nhits_water[i][j] != 0):
+		#if ((nhits_water[i][j]-dhits_water[i][j]) != 0):
 			if os.path.exists(sorting_dir + run_dir + run_tag + '_type0.h5'):
 				print 'found: ' + sorting_dir + run_dir + run_tag + '_type0.h5'
 				f = H.File(sorting_dir + run_dir + run_tag + '_type0.h5', 'r')
