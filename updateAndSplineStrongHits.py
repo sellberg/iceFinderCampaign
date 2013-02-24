@@ -328,6 +328,8 @@ for dirName in foundTypes:
 	storeFlag += 1
 
 
+colmax = 1
+colmin = -1
 storeFlag = 0
 
 #Loop over each type to view correlation

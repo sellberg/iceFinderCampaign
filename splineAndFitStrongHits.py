@@ -16,14 +16,18 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-r", "--run", action="store", type="string", dest="runNumber", help="run number you wish to view", metavar="xxxx", default="")
-parser.add_option("-m", "--min", action="store", type="float", dest="min_value", help="ignore intensities below this q-value in splined angular average (default: 0.06 A-1)", metavar="MIN_VALUE", default="0.06")
-parser.add_option("-x", "--max", action="store", type="float", dest="max_value", help="ignore intensities above this q-value in splined angular average (default: 3.48 A-1)", metavar="MAX_VALUE", default="3.48")
-parser.add_option("-d", "--delta", action="store", type="float", dest="delta_value", help="spline intensities with this interval in angular average (default: 0.001 A-1)", metavar="DELTA_VALUE", default="0.001")
+parser.add_option("-M", "--min", action="store", type="float", dest="min_value", help="ignore intensities below this q-value in splined angular average (default: 0.06 A-1)", metavar="MIN_VALUE", default="0.06")
+parser.add_option("-X", "--max", action="store", type="float", dest="max_value", help="ignore intensities above this q-value in splined angular average (default: 3.48 A-1)", metavar="MAX_VALUE", default="3.48")
+parser.add_option("-D", "--delta", action="store", type="float", dest="delta_value", help="spline intensities with this interval in angular average (default: 0.001 A-1)", metavar="DELTA_VALUE", default="0.001")
 parser.add_option("-p", "--peakfit", action="store_true", dest="peakfit", help="applies Gaussian peak fitting algorithm to the angular averages", default=False)
-parser.add_option("-s", "--sonemin", action="store", type="float", dest="S1_min", help="lower limit of range used for S1 peak fitting (default: 1.50 A-1)", metavar="MIN_VALUE", default="1.50")
-parser.add_option("-t", "--sonemax", action="store", type="float", dest="S1_max", help="upper limit of range used for S1 peak fitting (default: 2.08 A-1)", metavar="MAX_VALUE", default="2.08")
-parser.add_option("-u", "--stwomin", action="store", type="float", dest="S2_min", help="lower limit of range used for S2 peak fitting (default: 2.64 A-1)", metavar="MIN_VALUE", default="2.64")
-parser.add_option("-w", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default="3.20")
+parser.add_option("-S", "--sonemin", action="store", type="float", dest="S1_min", help="lower limit of range used for S1 peak fitting (default: 1.50 A-1)", metavar="MIN_VALUE", default="1.50")
+parser.add_option("-T", "--sonemax", action="store", type="float", dest="S1_max", help="upper limit of range used for S1 peak fitting (default: 2.08 A-1)", metavar="MAX_VALUE", default="2.08")
+parser.add_option("-U", "--stwomin", action="store", type="float", dest="S2_min", help="lower limit of range used for S2 peak fitting (default: 2.64 A-1)", metavar="MIN_VALUE", default="2.64")
+parser.add_option("-W", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default="3.20")
+parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="saves the xaca files along with the angular averages", default=False)
+#parser.add_option("-c", "--xcca", action="store_true", dest="xcca", help="saves the xcca files along with the angular averages", default=False)
+parser.add_option("-Q", "--nq", action="store", type="int", dest="nQ", help="number of Q bins in correlation file (default: 151)", metavar="N_Q", default="151")
+parser.add_option("-P", "--nphi", action="store", type="int", dest="nPhi", help="number of Phi bins in correlation file (default: 181)", metavar="N_PHI", default="181")
 parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  
 parser.add_option("-e", "--exclude", action="store_true", dest="exclude", help="excludes hits from splining/averaging", default=False)
 parser.add_option("-f", "--excludefile", action="store", type="string", dest="excludeFile", help="name of text file with hits to exlude (default: below100ADUs)", metavar="EXCLUDE_FILENAME", default="below100ADUs")
@@ -172,7 +176,7 @@ class img_class (object):
 			P.draw()
 	
 	def draw_img_for_viewing(self):
-		print "Press 'p' to save PNG."
+		#print "Press 'p' to save PNG."
 		global colmax
 		global colmin
 		global p1
@@ -225,6 +229,8 @@ avgRawArr = N.zeros((numTypes,1480,1552))
 avgAngAvgQ = N.arange(options.min_value,options.max_value+options.delta_value,options.delta_value)
 angAvgLength = int((options.max_value-options.min_value)/options.delta_value)+1
 avgAngAvg = N.zeros((numTypes,angAvgLength))
+if (options.xaca):
+	avgCorrArr = N.zeros((numTypes,options.nQ,options.nPhi))
 typeOccurences = N.zeros(numTypes)
 damaged_events = []
 wavelengths = [[] for i in foundTypeNumbers]
@@ -252,49 +258,58 @@ for currentlyExamining in range(numTypes):
 			for fname in foundTypeFiles[currentlyExamining]:
 				storeFlag = foundTypeNumbers[currentlyExamining]
 				diffractionName = source_dir + runtag + "/" + re.sub("-angavg",'',fname)
+				correlationName = source_dir + runtag + "/" + re.sub("-angavg","-xaca",fname)
 				if os.path.exists(diffractionName):
-					angAvgName = fname
-					f = H.File(angAvgName, 'r')
-					davg = N.array(f['data']['data'])
-					f.close()
-					if (davg[0].max() < options.max_value):
-						print "Error in Q-calibration! Qmax = %s, skipping event." % (davg[0].max())
-						damaged_events.append(fname)
-						continue
+					if os.path.exists(correlationName) or not options.xaca:
+						angAvgName = fname
+						f = H.File(angAvgName, 'r')
+						davg = N.array(f['data']['data'])
+						f.close()
+						if (davg[0].max() < options.max_value):
+							print "Error in Q-calibration! Qmax = %s, skipping event." % (davg[0].max())
+							damaged_events.append(fname)
+							continue
 					
-					f = H.File(diffractionName, 'r')
-					d = N.array(f['/data/data']).astype(float)
-					draw = N.array(f['/data/rawdata']).astype(float)
-					currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
-					currAttenuation=f['LCLS']['attenuation'][0]
-					f.close()
-					f = I.interp1d(davg[0], davg[1])
-					davg = f(avgAngAvgQ)
-					wavelengths[currentlyExamining].append(currWavelengthInAngs)
-					attenuations[currentlyExamining].append(currAttenuation)
-					avgIntensities[currentlyExamining].append(draw.mean())
-					maxIntensities[currentlyExamining].append(max(davg))
-					avgArr[currentlyExamining] += d
-					avgRawArr[currentlyExamining] += draw
-					avgAngAvg[currentlyExamining] += davg
+						f = H.File(diffractionName, 'r')
+						d = N.array(f['/data/data']).astype(float)
+						draw = N.array(f['/data/rawdata']).astype(float)
+						currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
+						currAttenuation=f['LCLS']['attenuation'][0]
+						f.close()
+						f = I.interp1d(davg[0], davg[1])
+						davg = f(avgAngAvgQ)
+						wavelengths[currentlyExamining].append(currWavelengthInAngs)
+						attenuations[currentlyExamining].append(currAttenuation)
+						avgIntensities[currentlyExamining].append(draw.mean())
+						maxIntensities[currentlyExamining].append(max(davg))
+						avgArr[currentlyExamining] += d
+						avgRawArr[currentlyExamining] += draw
+						avgAngAvg[currentlyExamining] += davg
+						if options.xaca:
+							f = H.File(correlationName, 'r')
+							dcorr = N.array(f['/data/data']).astype(float)	#currently saved as float (32-bit) although io->writeToHDF5() specifies it as double (64-bit)
+							f.close()
+							avgCorrArr[currentlyExamining] += dcorr
+						
+						if (options.peakfit):
+							#Gaussian peak fitting
+							p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+							index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
+							[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
+							if (success):
+								fitint1[currentlyExamining].append(p1[0])
+								fitpos1[currentlyExamining].append(p1[1])
+								fitfwhm1[currentlyExamining].append(p1[2])
+								fitint2[currentlyExamining].append(p1[3])
+								fitpos2[currentlyExamining].append(p1[4])
+								fitfwhm2[currentlyExamining].append(p1[5])
+							else:
+								print "The Gaussian peak fit failed, skipping %s" % (fname)
 					
-					if (options.peakfit):
-						#Gaussian peak fitting
-						p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
-						index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
-						[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
-						if (success):
-							fitint1[currentlyExamining].append(p1[0])
-							fitpos1[currentlyExamining].append(p1[1])
-							fitfwhm1[currentlyExamining].append(p1[2])
-							fitint2[currentlyExamining].append(p1[3])
-							fitpos2[currentlyExamining].append(p1[4])
-							fitfwhm2[currentlyExamining].append(p1[5])
-						else:
-							print "The Gaussian peak fit failed, skipping %s" % (fname)
-					
-					typeOccurences[currentlyExamining] += 1
-					fcounter += 1
+						typeOccurences[currentlyExamining] += 1
+						fcounter += 1
+					else:
+						print "The correlation file %s does not exist, ignoring %s" % (correlationName, fname)
 				else:
 					print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
 				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
@@ -322,11 +337,11 @@ if damaged_events:
 	print "Saved damaged events to %s" % (damaged_events_name)
 
 
-print "Right-click on colorbar to set maximum scale."
-print "Left-click on colorbar to set minimum scale."
-print "Center-click on colorbar (or press 'r') to reset color scale."
-print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
-print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
+#print "Right-click on colorbar to set maximum scale."
+#print "Left-click on colorbar to set minimum scale."
+#print "Center-click on colorbar (or press 'r') to reset color scale."
+#print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
+#print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
 
 storeFlag = 0
 
@@ -336,6 +351,8 @@ for dirName in foundTypes:
 		avgArr[storeFlag] /= typeOccurences[storeFlag]
 		avgRawArr[storeFlag] /= typeOccurences[storeFlag]
 		avgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
+		if options.xaca:
+			avgCorrArr[storeFlag] /= typeOccurences[storeFlag]
 		if(storeFlag > 0):
 			typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
 		else:
@@ -439,21 +456,41 @@ for dirName in foundTypes:
 		entry_1 = f.create_group("/data")
 		entry_1.create_dataset("diffraction", data=avgArr[storeFlag])
 		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
+		if options.xaca:
+			entry_1.create_dataset("correlation", data=avgCorrArr[storeFlag])
 		entry_1.create_dataset("angavg", data=avgAngAvg[storeFlag])
 		entry_1.create_dataset("angavgQ", data=avgAngAvgQ)
-		entry_1.create_dataset("attenuation", data=attenuations[storeFlag])
-		entry_1.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
-		entry_1.create_dataset("intensityMax", data=maxIntensities[storeFlag])
+		entry_2 = f.create_group("/data/shotStatistics")
+		entry_2.create_dataset("wavelength", data=wavelengths[storeFlag])
+		entry_2.create_dataset("attenuation", data=attenuations[storeFlag])
+		entry_2.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
+		entry_2.create_dataset("intensityMax", data=maxIntensities[storeFlag])
 		if (options.peakfit):
-			entry_2 = f.create_group("/data/peakFit")
-			entry_2.create_dataset("int1", data=fitint1[storeFlag])
-			entry_2.create_dataset("int2", data=fitint2[storeFlag])
-			entry_2.create_dataset("pos1", data=fitpos1[storeFlag])
-			entry_2.create_dataset("pos2", data=fitpos2[storeFlag])
-			entry_2.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
-			entry_2.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
+			entry_3 = f.create_group("/data/peakFit")
+			entry_3.create_dataset("int1", data=fitint1[storeFlag])
+			entry_3.create_dataset("int2", data=fitint2[storeFlag])
+			entry_3.create_dataset("pos1", data=fitpos1[storeFlag])
+			entry_3.create_dataset("pos2", data=fitpos2[storeFlag])
+			entry_3.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
+			entry_3.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
 		f.close()
 		print "Successfully updated %s" % (dirName +'/'+ typeTag + ".h5")
 		
 	storeFlag += 1
+
+colmax = 1
+colmin = -1
+storeFlag = 0
+
+#Loop over each type to view correlation
+if options.xaca:
+	for dirName in foundTypes:
+		if (typeOccurences[storeFlag] > 0.):
+			if (storeFlag > 0):
+				typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
+			else:
+				typeTag = runtag+'_type0'
+			currImg = img_class(avgCorrArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag+'_xaca', meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
+			currImg.draw_img_for_viewing()
+		storeFlag += 1
 
