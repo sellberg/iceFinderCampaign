@@ -19,6 +19,7 @@ parser.add_option("-r", "--run", action="store", type="string", dest="runNumber"
 parser.add_option("-m", "--min", action="store", type="float", dest="min_value", help="ignore intensities below this q-value in splined angular average (default: 0.06 A-1)", metavar="MIN_VALUE", default="0.06")
 parser.add_option("-x", "--max", action="store", type="float", dest="max_value", help="ignore intensities above this q-value in splined angular average (default: 3.48 A-1)", metavar="MAX_VALUE", default="3.48")
 parser.add_option("-d", "--delta", action="store", type="float", dest="delta_value", help="spline intensities with this interval in angular average (default: 0.001 A-1)", metavar="DELTA_VALUE", default="0.001")
+parser.add_option("-p", "--peakfit", action="store_true", dest="peakfit", help="applies Gaussian peak fitting algorithm to the angular averages", default=False)
 parser.add_option("-s", "--sonemin", action="store", type="float", dest="S1_min", help="lower limit of range used for S1 peak fitting (default: 1.50 A-1)", metavar="MIN_VALUE", default="1.50")
 parser.add_option("-t", "--sonemax", action="store", type="float", dest="S1_max", help="upper limit of range used for S1 peak fitting (default: 2.08 A-1)", metavar="MAX_VALUE", default="2.08")
 parser.add_option("-u", "--stwomin", action="store", type="float", dest="S2_min", help="lower limit of range used for S2 peak fitting (default: 2.64 A-1)", metavar="MIN_VALUE", default="2.64")
@@ -75,7 +76,10 @@ else:
 	tcounter = 0 
 	for cDir in foundTypes:
 		os.chdir(cDir)
-		updateTypes[tcounter] = int(input("Spline and peak fit "+cDir+"/ (1 for yes, 0 for no)? "))
+		if (options.peakfit):
+			updateTypes[tcounter] = int(input("Spline and peak fit "+cDir+"/ (1 for yes, 0 for no)? "))
+		else:
+			updateTypes[tcounter] = int(input("Spline "+cDir+"/ (1 for yes, 0 for no)? "))
 		foundTypeFiles[tcounter] += G.glob("LCLS*angavg.h5")
 		foundFiles += G.glob("LCLS*angavg.h5")
 		os.chdir(originaldir)
@@ -111,9 +115,10 @@ colmax = 500
 colmin = 0
 storeFlag = 0
 
-#Gaussian peak fitting functions
-fitfunc = lambda p, x: p[0]*exp(-(x-p[1])**2/(2*p[2]**2)) + p[3]*exp(-(x-p[4])**2/(2*p[5]**2))
-errfunc = lambda p, x, y: fitfunc(p, x) - y
+if (options.peakfit):
+	#Gaussian peak fitting functions
+	fitfunc = lambda p, x: p[0]*exp(-(x-p[1])**2/(2*p[2]**2)) + p[3]*exp(-(x-p[4])**2/(2*p[5]**2))
+	errfunc = lambda p, x, y: fitfunc(p, x) - y
 
 #########################################################
 # Imaging class copied from Ingrid Ofte's pyana_misc code
@@ -171,9 +176,10 @@ class img_class (object):
 		global colmax
 		global colmin
 		global p1
-		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
-		index = N.array([((self.inangavgQ > options.S1_min)[i] and (self.inangavgQ < options.S1_max)[i]) or ((self.inangavgQ > options.S2_min)[i] and (self.inangavgQ < options.S2_max)[i]) for i in range(len(self.inangavgQ))])
-		[p1, success] = optimize.leastsq(errfunc, p0[:], args=(self.inangavgQ[index],self.inangavg[index]))
+		if (options.peakfit):
+			p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+			index = N.array([((self.inangavgQ > options.S1_min)[i] and (self.inangavgQ < options.S1_max)[i]) or ((self.inangavgQ > options.S2_min)[i] and (self.inangavgQ < options.S2_max)[i]) for i in range(len(self.inangavgQ))])
+			[p1, success] = optimize.leastsq(errfunc, p0[:], args=(self.inangavgQ[index],self.inangavg[index]))
 		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
 		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_viewing)
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
@@ -183,7 +189,7 @@ class img_class (object):
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
-		if (success):
+		if (options.peakfit and success):
 			canvas.set_title("AngAvg; S1 = %.3f A-1, S2 = %.3f A-1" % (p1[1], p1[4]), fontsize='medium')
 		else:
 			canvas.set_title("Angular Average")
@@ -196,18 +202,18 @@ class img_class (object):
 			P.text(j,labelPosition,str(i), rotation="45")
 			labelPosition += maxAngAvg/numQLabels
 		
-		if (success):
+		if (options.peakfit and success):
 			P.plot(self.inangavgQ, self.inangavg, "b-", self.inangavgQ, fitfunc(p1, self.inangavgQ), "g-")
 		else:
 			P.plot(self.inangavgQ, self.inangavg)
 		
 		P.xlabel("Q (A-1)")
 		P.ylabel("I(Q) (ADU/srad)")
-		#pngtag = foundTypes[storeFlag] + '/' + "%s.png" % (self.filename)
-		#P.savefig(pngtag)
-		#print "%s saved." % (pngtag)
-		#P.close()
-		P.show()
+		pngtag = foundTypes[storeFlag] + '/' + "%s.png" % (self.filename)
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		P.close()
+		#P.show()
 
 
 ########################################################
@@ -225,12 +231,13 @@ wavelengths = [[] for i in foundTypeNumbers]
 attenuations = [[] for i in foundTypeNumbers]
 avgIntensities = [[] for i in foundTypeNumbers]
 maxIntensities = [[] for i in foundTypeNumbers]
-fitint1 = [[] for i in foundTypeNumbers]
-fitpos1 = [[] for i in foundTypeNumbers]
-fitfwhm1 = [[] for i in foundTypeNumbers]
-fitint2 = [[] for i in foundTypeNumbers]
-fitpos2 = [[] for i in foundTypeNumbers]
-fitfwhm2 = [[] for i in foundTypeNumbers]
+if (options.peakfit):
+	fitint1 = [[] for i in foundTypeNumbers]
+	fitpos1 = [[] for i in foundTypeNumbers]
+	fitfwhm1 = [[] for i in foundTypeNumbers]
+	fitint2 = [[] for i in foundTypeNumbers]
+	fitpos2 = [[] for i in foundTypeNumbers]
+	fitfwhm2 = [[] for i in foundTypeNumbers]
 
 #Loop over each type to spline and sum all hits
 for currentlyExamining in range(numTypes):
@@ -271,27 +278,31 @@ for currentlyExamining in range(numTypes):
 					avgRawArr[currentlyExamining] += draw
 					avgAngAvg[currentlyExamining] += davg
 					
-					#Gaussian peak fitting
-					p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
-					index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
-					[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
-					if (success):
-						fitint1[currentlyExamining].append(p1[0])
-						fitpos1[currentlyExamining].append(p1[1])
-						fitfwhm1[currentlyExamining].append(p1[2])
-						fitint2[currentlyExamining].append(p1[3])
-						fitpos2[currentlyExamining].append(p1[4])
-						fitfwhm2[currentlyExamining].append(p1[5])
-					else:
-						print "The Gaussian peak fit failed, skipping %s" % (fname)
+					if (options.peakfit):
+						#Gaussian peak fitting
+						p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+						index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
+						[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
+						if (success):
+							fitint1[currentlyExamining].append(p1[0])
+							fitpos1[currentlyExamining].append(p1[1])
+							fitfwhm1[currentlyExamining].append(p1[2])
+							fitint2[currentlyExamining].append(p1[3])
+							fitpos2[currentlyExamining].append(p1[4])
+							fitfwhm2[currentlyExamining].append(p1[5])
+						else:
+							print "The Gaussian peak fit failed, skipping %s" % (fname)
 					
 					typeOccurences[currentlyExamining] += 1
 					fcounter += 1
 				else:
 					print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
 				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
-					print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
-				
+					if (options.peakfit):
+						print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
+					else:
+						print str(fcounter) + " of " + str(numFilesInDir) + " files splined (" + str(fcounter*100/numFilesInDir) + "%)"
+			
 			os.chdir(originaldir)
 			t2 = time.time()
 			print "Time taken for averaging type" + str(storeFlag) + " = " + str(t2-t1) + " s."
@@ -333,95 +344,96 @@ for dirName in foundTypes:
 		currImg = img_class(avgArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag, meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
 		currImg.draw_img_for_viewing()
 		
-		#Gaussian peak fit statistics
-		fitdeltaq = N.array(fitpos2[storeFlag]) - N.array(fitpos1[storeFlag])
-		
-		fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
-		canvas = fig.add_subplot(131)
-		canvas.set_title("Histogram")
-		P.xlabel("S1 (A-1)")
-		P.ylabel("Hist(S1)")
-		hist_bins = N.arange(min(fitpos1[storeFlag]), max(fitpos1[storeFlag])+0.003, 0.001) - 0.0005
-		pos1_hist, hist_bins = N.histogram(fitpos1[storeFlag], bins=hist_bins)
-		pos1_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos1_hist))]
-		P.plot(pos1_bins, pos1_hist)
-		P.axvline(p1[1],0,max(pos1_hist),color='r')
-		
-		canvas = fig.add_subplot(132)
-		canvas.set_title("Histogram")
-		P.xlabel("deltaQ (A-1)")
-		P.ylabel("Hist(deltaQ)")
-		hist_bins = N.arange(min(fitdeltaq), max(fitdeltaq)+0.003, 0.001) - 0.0005
-		deltaq_hist, hist_bins = N.histogram(fitdeltaq, bins=hist_bins)
-		deltaq_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(deltaq_hist))]
-		P.plot(deltaq_bins, deltaq_hist)
-		P.axvline(p1[4]-p1[1],0,max(deltaq_hist),color='r')
-		
-		canvas = fig.add_subplot(133)
-		canvas.set_title("Histogram")
-		P.xlabel("S2 (A-1)")
-		P.ylabel("Hist(S2)")
-		hist_bins = N.arange(min(fitpos2[storeFlag]), max(fitpos2[storeFlag])+0.003, 0.001) - 0.0005
-		pos2_hist, hist_bins = N.histogram(fitpos2[storeFlag], bins=hist_bins)
-		pos2_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos2_hist))]
-		P.plot(pos2_bins, pos2_hist)
-		P.axvline(p1[4],0,max(pos2_hist),color='r')
-		
-		pngtag = dirName +'/'+ typeTag + "-peak_fit_hist.png"
-		P.savefig(pngtag)
-		print "%s saved." % (pngtag)
-		#P.show()
-		P.close()
-		
-		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
-		canvas = fig.add_subplot(131)
-		canvas.set_title("Correlation")
-		P.xlabel("deltaQ (A-1)")
-		P.ylabel("Average Intensity (ADU/pixel)")
-		P.plot(fitdeltaq, avgIntensities[storeFlag], 'r.')
-		
-		canvas = fig.add_subplot(132)
-		canvas.set_title("Correlation")
-		P.xlabel("deltaQ (A-1)")
-		P.ylabel("Max Intensity (ADU/srad)")
-		P.plot(fitdeltaq, maxIntensities[storeFlag], 'r.')
-		
-		canvas = fig.add_subplot(133)
-		canvas.set_title("Correlation")
-		P.xlabel("deltaQ (A-1)")
-		P.ylabel("Attenuation")
-		P.plot(fitdeltaq, attenuations[storeFlag], 'r.')
-		
-		pngtag = dirName +'/'+ typeTag + "-peak_fit_corr-dq.png"
-		P.savefig(pngtag)
-		print "%s saved." % (pngtag)
-		#P.show()
-		P.close()
-		
-		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
-		canvas = fig.add_subplot(131)
-		canvas.set_title("Correlation")
-		P.xlabel("Peak1 Intensity (ADU/srad)")
-		P.ylabel("Peak1 FWHM (A-1)")
-		P.plot(fitint1[storeFlag], fitfwhm1[storeFlag], 'r.')
-		
-		canvas = fig.add_subplot(132)
-		canvas.set_title("Correlation")
-		P.xlabel("Peak1 Intensity (ADU/srad)")
-		P.ylabel("Max Intensity (ADU/srad)")
-		P.plot(fitint1[storeFlag], maxIntensities[storeFlag], 'r.')
-		
-		canvas = fig.add_subplot(133)
-		canvas.set_title("Correlation")
-		P.xlabel("Peak2 Intensity (ADU/srad)")
-		P.ylabel("Peak2 FWHM (A-1)")
-		P.plot(fitint2[storeFlag], fitfwhm2[storeFlag], 'r.')
-		
-		pngtag = dirName +'/'+ typeTag + "-peak_fit_corr-int.png"
-		P.savefig(pngtag)
-		print "%s saved." % (pngtag)
-		#P.show()
-		P.close()
+		if (options.peakfit):
+			#Gaussian peak fit statistics
+			fitdeltaq = N.array(fitpos2[storeFlag]) - N.array(fitpos1[storeFlag])
+			
+			fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+			canvas = fig.add_subplot(131)
+			canvas.set_title("Histogram")
+			P.xlabel("S1 (A-1)")
+			P.ylabel("Hist(S1)")
+			hist_bins = N.arange(min(fitpos1[storeFlag]), max(fitpos1[storeFlag])+0.003, 0.001) - 0.0005
+			pos1_hist, hist_bins = N.histogram(fitpos1[storeFlag], bins=hist_bins)
+			pos1_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos1_hist))]
+			P.plot(pos1_bins, pos1_hist)
+			P.axvline(p1[1],0,max(pos1_hist),color='r')
+			
+			canvas = fig.add_subplot(132)
+			canvas.set_title("Histogram")
+			P.xlabel("deltaQ (A-1)")
+			P.ylabel("Hist(deltaQ)")
+			hist_bins = N.arange(min(fitdeltaq), max(fitdeltaq)+0.003, 0.001) - 0.0005
+			deltaq_hist, hist_bins = N.histogram(fitdeltaq, bins=hist_bins)
+			deltaq_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(deltaq_hist))]
+			P.plot(deltaq_bins, deltaq_hist)
+			P.axvline(p1[4]-p1[1],0,max(deltaq_hist),color='r')
+			
+			canvas = fig.add_subplot(133)
+			canvas.set_title("Histogram")
+			P.xlabel("S2 (A-1)")
+			P.ylabel("Hist(S2)")
+			hist_bins = N.arange(min(fitpos2[storeFlag]), max(fitpos2[storeFlag])+0.003, 0.001) - 0.0005
+			pos2_hist, hist_bins = N.histogram(fitpos2[storeFlag], bins=hist_bins)
+			pos2_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos2_hist))]
+			P.plot(pos2_bins, pos2_hist)
+			P.axvline(p1[4],0,max(pos2_hist),color='r')
+			
+			pngtag = dirName +'/'+ typeTag + "-peak_fit_hist.png"
+			P.savefig(pngtag)
+			print "%s saved." % (pngtag)
+			#P.show()
+			P.close()
+			
+			fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+			canvas = fig.add_subplot(131)
+			canvas.set_title("Correlation")
+			P.xlabel("deltaQ (A-1)")
+			P.ylabel("Average Intensity (ADU/pixel)")
+			P.plot(fitdeltaq, avgIntensities[storeFlag], 'r.')
+			
+			canvas = fig.add_subplot(132)
+			canvas.set_title("Correlation")
+			P.xlabel("deltaQ (A-1)")
+			P.ylabel("Max Intensity (ADU/srad)")
+			P.plot(fitdeltaq, maxIntensities[storeFlag], 'r.')
+			
+			canvas = fig.add_subplot(133)
+			canvas.set_title("Correlation")
+			P.xlabel("deltaQ (A-1)")
+			P.ylabel("Attenuation")
+			P.plot(fitdeltaq, attenuations[storeFlag], 'r.')
+			
+			pngtag = dirName +'/'+ typeTag + "-peak_fit_corr-dq.png"
+			P.savefig(pngtag)
+			print "%s saved." % (pngtag)
+			#P.show()
+			P.close()
+			
+			fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
+			canvas = fig.add_subplot(131)
+			canvas.set_title("Correlation")
+			P.xlabel("Peak1 Intensity (ADU/srad)")
+			P.ylabel("Peak1 FWHM (A-1)")
+			P.plot(fitint1[storeFlag], fitfwhm1[storeFlag], 'r.')
+			
+			canvas = fig.add_subplot(132)
+			canvas.set_title("Correlation")
+			P.xlabel("Peak1 Intensity (ADU/srad)")
+			P.ylabel("Max Intensity (ADU/srad)")
+			P.plot(fitint1[storeFlag], maxIntensities[storeFlag], 'r.')
+			
+			canvas = fig.add_subplot(133)
+			canvas.set_title("Correlation")
+			P.xlabel("Peak2 Intensity (ADU/srad)")
+			P.ylabel("Peak2 FWHM (A-1)")
+			P.plot(fitint2[storeFlag], fitfwhm2[storeFlag], 'r.')
+			
+			pngtag = dirName +'/'+ typeTag + "-peak_fit_corr-int.png"
+			P.savefig(pngtag)
+			print "%s saved." % (pngtag)
+			#P.show()
+			P.close()
 		
 		f = H.File(dirName +'/'+ typeTag + ".h5", "w")
 		entry_1 = f.create_group("/data")
@@ -429,16 +441,17 @@ for dirName in foundTypes:
 		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
 		entry_1.create_dataset("angavg", data=avgAngAvg[storeFlag])
 		entry_1.create_dataset("angavgQ", data=avgAngAvgQ)
-		entry_2 = f.create_group("/data/peakFit")
-		entry_2.create_dataset("int1", data=fitint1[storeFlag])
-		entry_2.create_dataset("int2", data=fitint2[storeFlag])
-		entry_2.create_dataset("pos1", data=fitpos1[storeFlag])
-		entry_2.create_dataset("pos2", data=fitpos2[storeFlag])
-		entry_2.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
-		entry_2.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
-		entry_2.create_dataset("attenuation", data=attenuations[storeFlag])
-		entry_2.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
-		entry_2.create_dataset("intensityMax", data=maxIntensities[storeFlag])
+		entry_1.create_dataset("attenuation", data=attenuations[storeFlag])
+		entry_1.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
+		entry_1.create_dataset("intensityMax", data=maxIntensities[storeFlag])
+		if (options.peakfit):
+			entry_2 = f.create_group("/data/peakFit")
+			entry_2.create_dataset("int1", data=fitint1[storeFlag])
+			entry_2.create_dataset("int2", data=fitint2[storeFlag])
+			entry_2.create_dataset("pos1", data=fitpos1[storeFlag])
+			entry_2.create_dataset("pos2", data=fitpos2[storeFlag])
+			entry_2.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
+			entry_2.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
 		f.close()
 		print "Successfully updated %s" % (dirName +'/'+ typeTag + ".h5")
 		

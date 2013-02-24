@@ -3,18 +3,29 @@
 # Written by J. Sellberg on 2012-01-09
 # Has the same functionality as analyzeSums-droplet_dispenser.py but for the new data format
 # Modified by J.S. on 2012-01-25 to include the thresholding analysis
+# Modified by J.S. on 2013-01-05 to include the peakfitting analysis
 
 import numpy as N
 from numpy import linalg as LA
 import h5py as H
 import glob as G
 import pylab as P
+from pylab import *
+import scipy
+from scipy import *
+from scipy import optimize
 import sys, os, re, shutil, subprocess, time
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", default=2000)
+parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", metavar="MAX_VALUE", default=2000)
+parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="averages the xaca files along with the angular averages", default=False)
+parser.add_option("-p", "--peakfit", action="store_true", dest="peakfit", help="applies the peakfitting analysis to the angular averages", default=False)
+parser.add_option("-s", "--sonemin", action="store", type="float", dest="S1_min", help="lower limit of range used for S1 peak fitting (default: 1.50 A-1)", metavar="MIN_VALUE", default=1.50)
+parser.add_option("-t", "--sonemax", action="store", type="float", dest="S1_max", help="upper limit of range used for S1 peak fitting (default: 2.08 A-1)", metavar="MAX_VALUE", default=2.08)
+parser.add_option("-u", "--stwomin", action="store", type="float", dest="S2_min", help="lower limit of range used for S2 peak fitting (default: 2.64 A-1)", metavar="MIN_VALUE", default=2.64)
+parser.add_option("-w", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default=3.20)
 (options, args) = parser.parse_args()
 
 # regular
@@ -224,13 +235,23 @@ water_pattern = []
 water_correlation = []
 water_angavg = []
 water_angavgQ = []
+water_angavgpos1 = []
+water_angavgpos2 = []
+water_fitpos1 = []
+water_fitpos2 = []
+water_fitdeltaq = []
 ice_pattern = []
 ice_correlation = []
 ice_angavg = []
 ice_angavgQ = []
 
+#Global parameters
 colmax = options.maxIntens
 colmin = 0
+
+#Gaussian peak fitting functions
+fitfunc = lambda p, x: p[0]*exp(-(x-p[1])**2/(2*p[2]**2)) + p[3]*exp(-(x-p[4])**2/(2*p[5]**2))
+errfunc = lambda p, x, y: fitfunc(p, x) - y
 
 #########################################################
 # Imaging class copied from Ingrid Ofte's pyana_misc code
@@ -371,6 +392,8 @@ for i in N.arange(len(runs)):
 	temp_water_correlation = []
 	temp_water_angavg = []
 	temp_water_angavgQ = []
+	temp_water_fitpos1 = []
+	temp_water_fitpos2 = []
 	temp_ice_pattern = []
 	temp_ice_correlation = []
 	temp_ice_angavg = []
@@ -384,9 +407,13 @@ for i in N.arange(len(runs)):
 				print 'found: ' + sorting_dir + run_dir + run_tag + '_type0.h5'
 				f = H.File(sorting_dir + run_dir + run_tag + '_type0.h5', 'r')
 				temp_water_pattern.append(N.array(f['data']['diffraction']))
-				temp_water_correlation.append(N.array(f['data']['correlation']))
+				if (options.xaca):
+					temp_water_correlation.append(N.array(f['data']['correlation']))
 				temp_water_angavg.append(N.array(f['data']['angavg']))
 				temp_water_angavgQ.append(N.array(f['data']['angavgQ']))
+				if (options.peakfit):
+					temp_water_fitpos1.append(N.array(f['data']['peakFit']['pos1']))
+					temp_water_fitpos2.append(N.array(f['data']['peakFit']['pos2']))
 				f.close()
 			else:
 				print 'file missing: ' + sorting_dir + run_dir + run_tag + '_type0.h5'
@@ -396,7 +423,8 @@ for i in N.arange(len(runs)):
 				print 'found: ' + sorting_dir + run_dir + 'type1/' + run_tag + '_type1.h5'
 				f = H.File(sorting_dir + run_dir + 'type1/' + run_tag + '_type1.h5', 'r')
 				temp_ice_pattern.append(N.array(f['data']['diffraction']))
-				temp_ice_correlation.append(N.array(f['data']['correlation']))
+				if (options.xaca):
+					temp_ice_correlation.append(N.array(f['data']['correlation']))
 				temp_ice_angavg.append(N.array(f['data']['angavg']))
 				temp_ice_angavgQ.append(N.array(f['data']['angavgQ']))
 				f.close()
@@ -455,23 +483,89 @@ for i in N.arange(len(runs)):
 		if (nwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
 			temp_water_pattern[j] *= nwater/sumwater
-			temp_water_correlation[j] *= nwater/sumwater
+			if (options.xaca):
+				temp_water_correlation[j] *= nwater/sumwater
 		if (nice > 0):
 			temp_ice_angavg[j] *= nice/sumice
 			temp_ice_pattern[j] *= nice/sumice
-			temp_ice_correlation[j] *= nice/sumice
+			if (options.xaca):
+				temp_ice_correlation[j] *= nice/sumice
 	
 	water_angavg.append(N.array(temp_water_angavg).sum(axis=0))
 	water_angavgQ.append(N.array(temp_water_angavgQ).sum(axis=0)/len(runs[i]))
 	water_pattern.append(N.array(temp_water_pattern).sum(axis=0))
-	water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
+	if (options.xaca):
+		water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
 	ice_angavg.append(N.array(temp_ice_angavg).sum(axis=0))
 	ice_angavgQ.append(N.array(temp_ice_angavgQ).sum(axis=0)/len(runs[i]))
 	ice_pattern.append(N.array(temp_ice_pattern).sum(axis=0))
-	ice_correlation.append(N.array(temp_ice_correlation).sum(axis=0))
+	if (options.xaca):
+		ice_correlation.append(N.array(temp_ice_correlation).sum(axis=0))	
 	
 	currImg = img_class(water_pattern[i], ice_pattern[i], [int(sumwater), int(sumice)], "output_runs-T%sK-pattern"%(temperatures[i]))
 	currImg.draw_img_for_viewing_pattern()
+	
+	
+	#Gaussian peak fit statistics
+	if (options.peakfit):
+		temp_water_fitpos1 = N.array([shot for run in temp_water_fitpos1 for shot in run])
+		temp_water_fitpos2 = N.array([shot for run in temp_water_fitpos2 for shot in run])
+		temp_water_fitpos1 = N.array([temp_water_fitpos1[j] for j in range(len(temp_water_fitpos1)) if (temp_water_fitpos1[j] > 1.7 and temp_water_fitpos1[j] < 2.0] and temp_water_fitpos2[j] > 2.8 and temp_water_fitpos1[j] < 3.2))
+		temp_water_fitpos2 = N.array([temp_water_fitpos2[j] for j in range(len(temp_water_fitpos2)) if (temp_water_fitpos1[j] > 1.7 and temp_water_fitpos1[j] < 2.0] and temp_water_fitpos2[j] > 2.8 and temp_water_fitpos1[j] < 3.2))
+		temp_water_fitdeltaq = temp_water_fitpos2 - temp_water_fitpos1
+		water_fitpos1.append(N.median(temp_water_fitpos1))
+		water_fitpos2.append(N.median(temp_water_fitpos2))
+		water_fitdeltaq.append(N.median(temp_water_fitdeltaq))
+		
+		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+		index = N.array([((water_angavgQ[i] > options.S1_min)[j] and (water_angavgQ[i] < options.S1_max)[j]) or ((water_angavgQ[i] > options.S2_min)[j] and (water_angavgQ[i] < options.S2_max)[j]) for j in range(len(water_angavgQ[i]))])
+		[p1, success] = optimize.leastsq(errfunc, p0[:], args=(water_angavgQ[i][index],water_angavg[i][index]))
+		
+		fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+		canvas = fig.add_subplot(131)
+		canvas.set_title("Mean = %.3f A-1, Median = %.3f A-1, RMS = %.2f A-1"%(temp_water_fitpos1.mean(), water_fitpos1[i], temp_water_fitpos1.std()), fontsize='small')
+		P.xlabel("S1 (A-1)")
+		P.ylabel("Hist(S1)")
+		hist_bins = N.arange(1.70, 2.002, 0.001) - 0.0005
+		pos1_hist, hist_bins = N.histogram(temp_water_fitpos1, bins=hist_bins)
+		pos1_bins = [(hist_bins[j] + hist_bins[j+1])/2 for j in range(len(pos1_hist))]
+		P.plot(pos1_bins, pos1_hist)
+		P.xlim([1.6, 2.1])
+		if (success):
+			P.axvline(p1[1],0,max(pos1_hist),color='r')
+			water_angavgpos1.append(p1[1])
+	
+		canvas = fig.add_subplot(132)
+		canvas.set_title("Mean = %.3f A-1, Median = %.3f A-1, RMS = %.2f A-1"%(temp_water_fitdeltaq.mean(), water_fitdeltaq[i], temp_water_fitdeltaq.std()), fontsize='small')
+		P.xlabel("deltaQ (A-1)")
+		P.ylabel("Hist(deltaQ)")
+		hist_bins = N.arange(0.9, 1.402, 0.001) - 0.0005
+		deltaq_hist, hist_bins = N.histogram(temp_water_fitdeltaq, bins=hist_bins)
+		deltaq_bins = [(hist_bins[j] + hist_bins[j+1])/2 for j in range(len(deltaq_hist))]
+		P.plot(deltaq_bins, deltaq_hist)
+		P.xlim([0.9, 1.4])
+		if (success):
+			P.axvline(p1[4]-p1[1],0,max(deltaq_hist),color='r')
+	
+		canvas = fig.add_subplot(133)
+		canvas.set_title("Mean = %.3f A-1, Median = %.3f A-1, RMS = %.2f A-1"%(temp_water_fitpos2.mean(), water_fitpos2[i], temp_water_fitpos2.std()), fontsize='small')
+		P.xlabel("S2 (A-1)")
+		P.ylabel("Hist(S2)")
+		hist_bins = N.arange(2.80, 3.202, 0.001) - 0.0005
+		pos2_hist, hist_bins = N.histogram(temp_water_fitpos2, bins=hist_bins)
+		pos2_bins = [(hist_bins[j] + hist_bins[j+1])/2 for j in range(len(pos2_hist))]
+		P.plot(pos2_bins, pos2_hist)
+		P.xlim([2.7, 3.2])
+		if (success):
+			P.axvline(p1[4],0,max(pos2_hist),color='r')
+			water_angavgpos2.append(p1[4])
+	
+		print "output_runs-T%sK-peakfit_hist.png saved."%(temperatures[i])
+		P.savefig(original_dir + "output_runs-T%sK-peakfit_hist.png"%(temperatures[i]))
+		#P.savefig(original_dir + "output_runs-T%sK-peakfit_hist.eps"%(temperatures[i]), format='eps')
+		#P.show()
+		P.close()
+
 
 #plot angavg
 fig = P.figure(num=None, figsize=(13.5, 10), dpi=100, facecolor='w', edgecolor='k')
@@ -530,12 +624,14 @@ for i in N.arange(len(runs)):
 	entry_2 = f.create_group("/data/%.1fmm"%(distances[i]))
 	entry_3 = f.create_group("/data/%.1fmm/water"%(distances[i]))
 	entry_3.create_dataset("diffraction", data=water_pattern[i])
-	entry_3.create_dataset("correlation", data=water_correlation[i])
+	if (options.xaca):
+		entry_3.create_dataset("correlation", data=water_correlation[i])
 	entry_3.create_dataset("angavg", data=water_angavg[i])
 	entry_3.create_dataset("angavg_Q", data=water_angavgQ[i])
 	entry_4 = f.create_group("/data/%.1fmm/ice"%(distances[i]))
 	entry_4.create_dataset("diffraction", data=ice_pattern[i])
-	entry_4.create_dataset("correlation", data=ice_correlation[i])
+	if (options.xaca):
+		entry_4.create_dataset("correlation", data=ice_correlation[i])
 	entry_4.create_dataset("angavg", data=ice_angavg[i])
 	entry_4.create_dataset("angavg_Q", data=ice_angavgQ[i])
 
