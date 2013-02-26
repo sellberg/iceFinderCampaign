@@ -233,6 +233,7 @@ if (options.xaca):
 	avgCorrArr = N.zeros((numTypes,options.nQ,options.nPhi))
 typeOccurences = N.zeros(numTypes)
 damaged_events = []
+failed_fits = []
 wavelengths = [[] for i in foundTypeNumbers]
 attenuations = [[] for i in foundTypeNumbers]
 avgIntensities = [[] for i in foundTypeNumbers]
@@ -279,6 +280,7 @@ for currentlyExamining in range(numTypes):
 					correlationName = source_dir + runtag + '/' + re.sub("-angavg","-xaca",fname)
 					if os.path.exists(diffractionName):
 						if (os.path.exists(correlationName) or not options.xaca):
+							#Read cspad-angavg.h5
 							angAvgName = fname
 							f = H.File(angAvgName, 'r')
 							davg = N.array(f['data']['data'])
@@ -286,35 +288,28 @@ for currentlyExamining in range(numTypes):
 							if (davg[0].max() < options.max_value):
 								print "Error in Q-calibration! Qmax = %s, skipping event." % (davg[0].max())
 								damaged_events.append(fname)
+								fcounter += 1
 								continue
 							
+							#Read cspad.h5
 							f = H.File(diffractionName, 'r')
 							d = N.array(f['/data/data']).astype(float)
 							draw = N.array(f['/data/rawdata']).astype(float)
 							currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
 							currAttenuation=f['LCLS']['attenuation'][0]
 							f.close()
+							
+							#Spline angAvg
 							f = I.interp1d(davg[0], davg[1])
 							davg = f(avgAngAvgQ)
-							wavelengths[currentlyExamining].append(currWavelengthInAngs)
-							attenuations[currentlyExamining].append(currAttenuation)
-							avgIntensities[currentlyExamining].append(draw.mean())
-							maxIntensities[currentlyExamining].append(max(davg))
-							avgArr[currentlyExamining] += d
-							avgRawArr[currentlyExamining] += draw
-							avgAngAvg[currentlyExamining] += davg
-							if options.xaca:
-								f = H.File(correlationName, 'r')
-								dcorr = N.array(f['/data/data']).astype(float)	#currently saved as float (32-bit) although io->writeToHDF5() specifies it as double (64-bit)
-								f.close()
-								avgCorrArr[currentlyExamining] += dcorr
 							
 							if options.peakfit:
 								#Gaussian peak fitting
-								p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+								#p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+								p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2] #this helped LCLS_2011_Feb28_r0146_173206_9f8d_cspad-angavg.h5 from failing fit
 								index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
 								[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
-								if (success):
+								if (success and p1[1] > options.S1_min and p1[1] < options.S1_max and p1[4] > options.S2_min and p1[4] < options.S2_max):
 									fitint1[currentlyExamining].append(p1[0])
 									fitpos1[currentlyExamining].append(p1[1])
 									fitfwhm1[currentlyExamining].append(p1[2])
@@ -322,8 +317,32 @@ for currentlyExamining in range(numTypes):
 									fitpos2[currentlyExamining].append(p1[4])
 									fitfwhm2[currentlyExamining].append(p1[5])
 								else:
-									print "The Gaussian peak fit failed, skipping %s" % (fname)
+									print "The Gaussian peak fit failed, skipping %s." % (fname)
+									failed_fits.append(fname)
+									if not os.path.exists("failedFits"):
+										os.mkdir("failedFits")
+									os.chdir(originaldir)
+									currImg = img_class(d, davg, avgAngAvgQ, "failedFits/"+fname, meanWaveLengthInAngs=currWavelengthInAngs)
+									currImg.draw_img_for_viewing()
+									os.chdir(dirName)
+									fcounter += 1
+									continue
 							
+							if options.xaca:
+								#Read and save cspad-xaca.h5
+								f = H.File(correlationName, 'r')
+								dcorr = N.array(f['/data/data']).astype(float)	#currently saved as float (32-bit) although io->writeToHDF5() specifies it as double (64-bit)
+								f.close()
+								avgCorrArr[currentlyExamining] += dcorr
+								
+							#Save cspad.h5 and cspad-angavg.h5
+							wavelengths[currentlyExamining].append(currWavelengthInAngs)
+							attenuations[currentlyExamining].append(currAttenuation)
+							avgIntensities[currentlyExamining].append(draw.mean())
+							maxIntensities[currentlyExamining].append(max(davg))
+							avgArr[currentlyExamining] += d
+							avgRawArr[currentlyExamining] += draw
+							avgAngAvg[currentlyExamining] += davg
 							typeOccurences[currentlyExamining] += 1
 							fcounter += 1
 						else:
@@ -349,10 +368,23 @@ for currentlyExamining in range(numTypes):
 
 
 if damaged_events:
-	damaged_events_name = write_dir + runtag + "_damaged_events.txt"
+	if options.exclude:
+		damaged_events_name = write_dir + runtag + "_damaged_events-" + options.excludeFile + "_excluded.txt"
+	else:
+		damaged_events_name = write_dir + runtag + "_damaged_events.txt"
 	print "There are %s damaged events that have been ignored." % (len(damaged_events))
 	N.array(damaged_events).tofile(damaged_events_name, sep="\n")
 	print "Saved damaged events to %s" % (damaged_events_name)
+
+
+if failed_fits:
+	if options.exclude:
+		failed_fits_name = write_dir + runtag + "_failed_fits-" + options.excludeFile + "_excluded.txt"
+	else:
+		failed_fits_name = write_dir + runtag + "_failed_fits.txt"
+	print "There are %s failed fits that have been ignored." % (len(failed_fits))
+	N.array(failed_fits).tofile(failed_fits_name, sep="\n")
+	print "Saved failed fits to %s" % (failed_fits_name)
 
 
 #print "Right-click on colorbar to set maximum scale."
@@ -394,7 +426,7 @@ for dirName in foundTypes:
 			canvas.set_title("Histogram")
 			P.xlabel("S1 (A-1)")
 			P.ylabel("Hist(S1)")
-			hist_bins = N.arange(min(fitpos1[storeFlag]), max(fitpos1[storeFlag])+0.003, 0.001) - 0.0005
+			hist_bins = N.arange(min(fitpos1[storeFlag]), max(fitpos1[storeFlag])+0.004, 0.001) - 0.0015
 			pos1_hist, hist_bins = N.histogram(fitpos1[storeFlag], bins=hist_bins)
 			pos1_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos1_hist))]
 			P.plot(pos1_bins, pos1_hist)
@@ -404,7 +436,7 @@ for dirName in foundTypes:
 			canvas.set_title("Histogram")
 			P.xlabel("deltaQ (A-1)")
 			P.ylabel("Hist(deltaQ)")
-			hist_bins = N.arange(min(fitdeltaq), max(fitdeltaq)+0.003, 0.001) - 0.0005
+			hist_bins = N.arange(min(fitdeltaq), max(fitdeltaq)+0.004, 0.001) - 0.0015
 			deltaq_hist, hist_bins = N.histogram(fitdeltaq, bins=hist_bins)
 			deltaq_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(deltaq_hist))]
 			P.plot(deltaq_bins, deltaq_hist)
@@ -414,7 +446,7 @@ for dirName in foundTypes:
 			canvas.set_title("Histogram")
 			P.xlabel("S2 (A-1)")
 			P.ylabel("Hist(S2)")
-			hist_bins = N.arange(min(fitpos2[storeFlag]), max(fitpos2[storeFlag])+0.003, 0.001) - 0.0005
+			hist_bins = N.arange(min(fitpos2[storeFlag]), max(fitpos2[storeFlag])+0.004, 0.001) - 0.0015
 			pos2_hist, hist_bins = N.histogram(fitpos2[storeFlag], bins=hist_bins)
 			pos2_bins = [(hist_bins[i] + hist_bins[i+1])/2 for i in range(len(pos2_hist))]
 			P.plot(pos2_bins, pos2_hist)

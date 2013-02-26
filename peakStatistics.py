@@ -164,6 +164,7 @@ print "%s saved."%(pngtag)
 #print "%s saved."%(epstag)
 P.show()
 
+# SAVE HISTOGRAMS TO TEXTFILE NOT YET IMPLEMENTED SINCE IT HASN'T BEEN NECESSARY
 #for i in N.arange(ndod):
 #	txttag = "sample-nozzle_distances-droplet_dispenser_%s.txt"%(labels_dod[i])
 #	N.array([mean_dod[i],std_dod[i],maxmin_dod[i],error_dod[i]]).tofile(txttag, sep = "\n", format="%lf")
