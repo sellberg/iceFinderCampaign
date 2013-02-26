@@ -30,7 +30,7 @@ parser.add_option("-Q", "--nq", action="store", type="int", dest="nQ", help="num
 parser.add_option("-P", "--nphi", action="store", type="int", dest="nPhi", help="number of Phi bins in correlation file (default: 181)", metavar="N_PHI", default="181")
 parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  
 parser.add_option("-e", "--exclude", action="store_true", dest="exclude", help="excludes hits from splining/averaging", default=False)
-parser.add_option("-f", "--excludefile", action="store", type="string", dest="excludeFile", help="name of text file with hits to exlude (default: below100ADUs)", metavar="EXCLUDE_FILENAME", default="below100ADUs")
+parser.add_option("-f", "--excludefile", action="store", type="string", dest="excludeFile", help="name of txt file with hits to exlude (default: below100ADUs)", metavar="EXCLUDE_FILENAME", default="below100ADUs")
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 (options, args) = parser.parse_args()
 
@@ -80,7 +80,7 @@ else:
 	tcounter = 0 
 	for cDir in foundTypes:
 		os.chdir(cDir)
-		if (options.peakfit):
+		if options.peakfit:
 			updateTypes[tcounter] = int(input("Spline and peak fit "+cDir+"/ (1 for yes, 0 for no)? "))
 		else:
 			updateTypes[tcounter] = int(input("Spline "+cDir+"/ (1 for yes, 0 for no)? "))
@@ -119,7 +119,7 @@ colmax = 500
 colmin = 0
 storeFlag = 0
 
-if (options.peakfit):
+if options.peakfit:
 	#Gaussian peak fitting functions
 	fitfunc = lambda p, x: p[0]*exp(-(x-p[1])**2/(2*p[2]**2)) + p[3]*exp(-(x-p[4])**2/(2*p[5]**2))
 	errfunc = lambda p, x, y: fitfunc(p, x) - y
@@ -180,7 +180,7 @@ class img_class (object):
 		global colmax
 		global colmin
 		global p1
-		if (options.peakfit):
+		if options.peakfit:
 			p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
 			index = N.array([((self.inangavgQ > options.S1_min)[i] and (self.inangavgQ < options.S1_max)[i]) or ((self.inangavgQ > options.S2_min)[i] and (self.inangavgQ < options.S2_max)[i]) for i in range(len(self.inangavgQ))])
 			[p1, success] = optimize.leastsq(errfunc, p0[:], args=(self.inangavgQ[index],self.inangavg[index]))
@@ -237,7 +237,7 @@ wavelengths = [[] for i in foundTypeNumbers]
 attenuations = [[] for i in foundTypeNumbers]
 avgIntensities = [[] for i in foundTypeNumbers]
 maxIntensities = [[] for i in foundTypeNumbers]
-if (options.peakfit):
+if options.peakfit:
 	fitint1 = [[] for i in foundTypeNumbers]
 	fitpos1 = [[] for i in foundTypeNumbers]
 	fitfwhm1 = [[] for i in foundTypeNumbers]
@@ -250,70 +250,88 @@ for currentlyExamining in range(numTypes):
 	dirName = foundTypes[currentlyExamining]
 	fcounter = 0
 	numFilesInDir = len(foundTypeFiles[currentlyExamining])
+	sType = set(foundTypeFiles[currentlyExamining])
 	if (updateTypes[currentlyExamining] == 1):
 		if (set(foundTypeFiles[currentlyExamining]).issubset(sH5)):
+			if (options.exclude):
+				#Exclude hits
+				excludedFiles = []
+				print "Reading excluded hits from %s ..." % (dirName + '/' + options.excludeFile + ".txt")
+				f = open(dirName + '/' + options.excludeFile + ".txt", 'r')
+				for line in f:
+					if line[0] != '#':
+						line = re.sub("\n", '', line)
+						excludedFiles.append(line)
+				f.close()
+				sExcluded = set(excludedFiles)
+				print "Found %d hits to exclude." % (len(sType.intersection(sExcluded)))
+				numFilesInDir = len(sType.difference(sExcluded))
+			else:
+				sExcluded = sType
+			
 			t1 = time.time()
 			print "Now splining H5 files in %s/ ..." % (dirName)
 			os.chdir(dirName)
 			for fname in foundTypeFiles[currentlyExamining]:
-				storeFlag = foundTypeNumbers[currentlyExamining]
-				diffractionName = source_dir + runtag + "/" + re.sub("-angavg",'',fname)
-				correlationName = source_dir + runtag + "/" + re.sub("-angavg","-xaca",fname)
-				if os.path.exists(diffractionName):
-					if os.path.exists(correlationName) or not options.xaca:
-						angAvgName = fname
-						f = H.File(angAvgName, 'r')
-						davg = N.array(f['data']['data'])
-						f.close()
-						if (davg[0].max() < options.max_value):
-							print "Error in Q-calibration! Qmax = %s, skipping event." % (davg[0].max())
-							damaged_events.append(fname)
-							continue
-					
-						f = H.File(diffractionName, 'r')
-						d = N.array(f['/data/data']).astype(float)
-						draw = N.array(f['/data/rawdata']).astype(float)
-						currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
-						currAttenuation=f['LCLS']['attenuation'][0]
-						f.close()
-						f = I.interp1d(davg[0], davg[1])
-						davg = f(avgAngAvgQ)
-						wavelengths[currentlyExamining].append(currWavelengthInAngs)
-						attenuations[currentlyExamining].append(currAttenuation)
-						avgIntensities[currentlyExamining].append(draw.mean())
-						maxIntensities[currentlyExamining].append(max(davg))
-						avgArr[currentlyExamining] += d
-						avgRawArr[currentlyExamining] += draw
-						avgAngAvg[currentlyExamining] += davg
-						if options.xaca:
-							f = H.File(correlationName, 'r')
-							dcorr = N.array(f['/data/data']).astype(float)	#currently saved as float (32-bit) although io->writeToHDF5() specifies it as double (64-bit)
+				if (fname not in sExcluded or not options.exclude):
+					storeFlag = foundTypeNumbers[currentlyExamining]
+					diffractionName = source_dir + runtag + '/' + re.sub("-angavg",'',fname)
+					correlationName = source_dir + runtag + '/' + re.sub("-angavg","-xaca",fname)
+					if os.path.exists(diffractionName):
+						if (os.path.exists(correlationName) or not options.xaca):
+							angAvgName = fname
+							f = H.File(angAvgName, 'r')
+							davg = N.array(f['data']['data'])
 							f.close()
-							avgCorrArr[currentlyExamining] += dcorr
-						
-						if (options.peakfit):
-							#Gaussian peak fitting
-							p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
-							index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
-							[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
-							if (success):
-								fitint1[currentlyExamining].append(p1[0])
-								fitpos1[currentlyExamining].append(p1[1])
-								fitfwhm1[currentlyExamining].append(p1[2])
-								fitint2[currentlyExamining].append(p1[3])
-								fitpos2[currentlyExamining].append(p1[4])
-								fitfwhm2[currentlyExamining].append(p1[5])
-							else:
-								print "The Gaussian peak fit failed, skipping %s" % (fname)
-					
-						typeOccurences[currentlyExamining] += 1
-						fcounter += 1
+							if (davg[0].max() < options.max_value):
+								print "Error in Q-calibration! Qmax = %s, skipping event." % (davg[0].max())
+								damaged_events.append(fname)
+								continue
+							
+							f = H.File(diffractionName, 'r')
+							d = N.array(f['/data/data']).astype(float)
+							draw = N.array(f['/data/rawdata']).astype(float)
+							currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
+							currAttenuation=f['LCLS']['attenuation'][0]
+							f.close()
+							f = I.interp1d(davg[0], davg[1])
+							davg = f(avgAngAvgQ)
+							wavelengths[currentlyExamining].append(currWavelengthInAngs)
+							attenuations[currentlyExamining].append(currAttenuation)
+							avgIntensities[currentlyExamining].append(draw.mean())
+							maxIntensities[currentlyExamining].append(max(davg))
+							avgArr[currentlyExamining] += d
+							avgRawArr[currentlyExamining] += draw
+							avgAngAvg[currentlyExamining] += davg
+							if options.xaca:
+								f = H.File(correlationName, 'r')
+								dcorr = N.array(f['/data/data']).astype(float)	#currently saved as float (32-bit) although io->writeToHDF5() specifies it as double (64-bit)
+								f.close()
+								avgCorrArr[currentlyExamining] += dcorr
+							
+							if options.peakfit:
+								#Gaussian peak fitting
+								p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+								index = N.array([((avgAngAvgQ > options.S1_min)[i] and (avgAngAvgQ < options.S1_max)[i]) or ((avgAngAvgQ > options.S2_min)[i] and (avgAngAvgQ < options.S2_max)[i]) for i in range(len(avgAngAvgQ))])
+								[p1, success] = optimize.leastsq(errfunc, p0[:], args=(avgAngAvgQ[index],davg[index]))
+								if (success):
+									fitint1[currentlyExamining].append(p1[0])
+									fitpos1[currentlyExamining].append(p1[1])
+									fitfwhm1[currentlyExamining].append(p1[2])
+									fitint2[currentlyExamining].append(p1[3])
+									fitpos2[currentlyExamining].append(p1[4])
+									fitfwhm2[currentlyExamining].append(p1[5])
+								else:
+									print "The Gaussian peak fit failed, skipping %s" % (fname)
+							
+							typeOccurences[currentlyExamining] += 1
+							fcounter += 1
+						else:
+							print "The correlation file %s does not exist, ignoring %s" % (correlationName, fname)
 					else:
-						print "The correlation file %s does not exist, ignoring %s" % (correlationName, fname)
-				else:
-					print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
+						print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
 				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
-					if (options.peakfit):
+					if options.peakfit:
 						print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
 					else:
 						print str(fcounter) + " of " + str(numFilesInDir) + " files splined (" + str(fcounter*100/numFilesInDir) + "%)"
@@ -353,15 +371,21 @@ for dirName in foundTypes:
 		avgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
 		if options.xaca:
 			avgCorrArr[storeFlag] /= typeOccurences[storeFlag]
-		if(storeFlag > 0):
-			typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
+		if (storeFlag > 0):
+			if options.exclude:
+				typeTag = runtag + "_type" + str(foundTypeNumbers[storeFlag]) + "-" + options.excludeFile + "_excluded"
+			else:
+				typeTag = runtag + "_type" + str(foundTypeNumbers[storeFlag])
 		else:
-			typeTag = runtag+'_type0'
+			if options.exclude:
+				typeTag = runtag + "_type0" + "-" + options.excludeFile + "_excluded"
+			else:
+				typeTag = runtag + "_type0"
 		
 		currImg = img_class(avgArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag, meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
 		currImg.draw_img_for_viewing()
 		
-		if (options.peakfit):
+		if options.peakfit:
 			#Gaussian peak fit statistics
 			fitdeltaq = N.array(fitpos2[storeFlag]) - N.array(fitpos1[storeFlag])
 			
@@ -452,7 +476,8 @@ for dirName in foundTypes:
 			#P.show()
 			P.close()
 		
-		f = H.File(dirName +'/'+ typeTag + ".h5", "w")
+		hdf5tag = dirName +'/'+ typeTag + ".h5"
+		f = H.File(hdf5tag, "w")
 		entry_1 = f.create_group("/data")
 		entry_1.create_dataset("diffraction", data=avgArr[storeFlag])
 		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
@@ -465,7 +490,7 @@ for dirName in foundTypes:
 		entry_2.create_dataset("attenuation", data=attenuations[storeFlag])
 		entry_2.create_dataset("intensityAvg", data=avgIntensities[storeFlag])
 		entry_2.create_dataset("intensityMax", data=maxIntensities[storeFlag])
-		if (options.peakfit):
+		if options.peakfit:
 			entry_3 = f.create_group("/data/peakFit")
 			entry_3.create_dataset("int1", data=fitint1[storeFlag])
 			entry_3.create_dataset("int2", data=fitint2[storeFlag])
@@ -474,7 +499,7 @@ for dirName in foundTypes:
 			entry_3.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
 			entry_3.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
 		f.close()
-		print "Successfully updated %s" % (dirName +'/'+ typeTag + ".h5")
+		print "Successfully updated %s" % (hdf5tag)
 		
 	storeFlag += 1
 
@@ -487,9 +512,15 @@ if options.xaca:
 	for dirName in foundTypes:
 		if (typeOccurences[storeFlag] > 0.):
 			if (storeFlag > 0):
-				typeTag = runtag+'_type'+str(foundTypeNumbers[storeFlag])
+				if options.exclude:
+					typeTag = runtag + "_type" + str(foundTypeNumbers[storeFlag]) + "-" + options.excludeFile + "_excluded"
+				else:
+					typeTag = runtag + "_type" + str(foundTypeNumbers[storeFlag])
 			else:
-				typeTag = runtag+'_type0'
+				if options.exclude:
+					typeTag = runtag + "_type0" + "-" + options.excludeFile + "_excluded"
+				else:
+					typeTag = runtag + "_type0"
 			currImg = img_class(avgCorrArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag+'_xaca', meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
 			currImg.draw_img_for_viewing()
 		storeFlag += 1
