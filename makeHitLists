@@ -35,6 +35,6 @@ then
     mv $run'_hits.txt' ../.
     
 else
-    echo to make lists of hits: ./makeHitList output_rXXXX
+    echo to make lists of hits: ./makeHitLists output_rXXXX
 fi
 

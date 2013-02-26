@@ -1,6 +1,6 @@
 #!/bin/bash
-# removes duplicates and sorts the hits in the .txt file
-# takes 1 input: <FILENAME>
+# make lists of hits below 50 and 100 ADUs and copies angular averages back to original folder
+# takes 1 input: <RUN_DIR>
 
 if [ $# -eq 1 ]
 then
@@ -9,10 +9,14 @@ then
     echo "created $1below50ADUs.txt"
     cp LCLS*angavg.h5 ../.
     cd ../below100ADUs/
+    ls LCLS*angavg.h5 > ../below100above50ADUs.txt
+    echo "created $1below100above50ADUs.txt"
     ls LCLS*angavg.h5 > ../below100ADUs.txt
-    echo "created $1below100ADUs.txt"
     cp LCLS*angavg.h5 ../.
+    cd ../
+    more below50ADUs.txt >> below100ADUs.txt
+    echo "created $1below100ADUs.txt"
 else
-    echo to log hits below threshold: ./logHitBelows output_rXXXX/
+    echo to log hits below threshold: ./logHitsBelow output_rXXXX/
 fi
 

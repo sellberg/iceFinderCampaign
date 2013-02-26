@@ -37,7 +37,7 @@ for i in N.arange(len(runs)):
 		file_hits = "npeaks/r0%d-cleanedhits.txt" % (runs[i][j])
 		file_ice = "hits_from_script/r0%d_hits-type1.txt" % (runs[i][j])
 		file_below50 = "%s_r0%d/type1/below50ADUs.txt" % (options.output, runs[i][j])
-		file_below100 = "%s_r0%d/type1/below100ADUs.txt" % (options.output, runs[i][j])
+		file_below100 = "%s_r0%d/type1/below100above50ADUs.txt" % (options.output, runs[i][j])
 
 		fhits = N.loadtxt(file_hits, dtype='str', comments='#', delimiter=', ')
 		fice = N.loadtxt(file_ice, dtype='str', comments='#', delimiter=' ')
@@ -46,7 +46,7 @@ for i in N.arange(len(runs)):
 		if os.path.exists(file_below50):
 			fbelow50 = N.loadtxt(file_below50, dtype='str', comments='#', delimiter=' ')
 			if (fbelow50.size == 1):
-				fbelow50 = fbelow50.base[0]
+				fbelow50 = [fbelow50.base[0]]
 			
 			for hit in fbelow50:
 				dirInStringPos = hit.find("-angavg")
@@ -59,7 +59,7 @@ for i in N.arange(len(runs)):
 		if os.path.exists(file_below100):		
 			fbelow100 = N.loadtxt(file_below100, dtype='str', comments='#', delimiter=' ')
 			if (fbelow100.size == 1):
-				fbelow100 = fbelow100.base[0]
+				fbelow100 = [fbelow100.base[0]]
 
 			for hit in fbelow100:
 				dirInStringPos = hit.find("-angavg")
@@ -110,7 +110,7 @@ for i in N.arange(len(runs)):
 						sys.exit(1)
 					counter += 1
 			else:
-				print "Found %d ice hits for higher thresholds in r0%d that do not exist in %s, aborting." % (len(sBelow50-sIce)+len(sBelow100-sIce), runs[i][j], file_ice)
+				print "Found %d ice hits for higher thresholds in r0%d that do not exist in %s, aborting. Rerun: ./makeHitLists" % (len(sBelow50-sIce)+len(sBelow100-sIce), runs[i][j], file_ice)
 				sys.exit(1)
 		else:
 			print "Found %d ice hits in r0%d that do not exist in %s, aborting." % (len(sIce-sHits), runs[i][j], file_hits)
