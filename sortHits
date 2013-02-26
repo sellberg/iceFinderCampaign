@@ -1,0 +1,25 @@
+#!/bin/bash
+# removes duplicates and sorts the hits in the .txt file
+# takes 1 input: <FILENAME>
+
+if [ $# -eq 1 ]
+then
+    FILES=`more $1`
+    rm temp/*
+
+    for f in $FILES; do
+	if test ! -e temp/$f; then
+	    touch temp/$f
+	else
+	    echo "THIS IS A DUPLICATE!!!" $f
+	fi
+    done
+
+    sorted=`echo $1 | sed -e 's/.txt/_sorted.txt/g'`
+    cd temp/
+    ls * > ../$sorted
+    echo "Made "$sorted
+else
+    echo to sort hits: ./sortHits rXXXX_hits.txt
+fi
+
