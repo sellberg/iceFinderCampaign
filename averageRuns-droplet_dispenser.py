@@ -8,9 +8,13 @@ import numpy as N
 from numpy import linalg as LA
 import h5py as H
 import glob as G
-import os 
-import re
-import pylab as P
+import matplotlib
+import matplotlib.pyplot as P
+from pylab import *
+import scipy
+import scipy.interpolate as I
+from scipy import *
+from scipy import optimize
 import sys, os, re, shutil, subprocess, time
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
@@ -295,4 +299,3 @@ f.close()
 print "Successfully updated output_runs-droplet_dispenser-all_T+Q_20ADUs.h5"
 #print "Successfully updated output_runs-droplet_dispenser-all_T+Q_50ADUs.h5"
 #print "Successfully updated output_runs-droplet_dispenser-all_T+Q_100ADUs.h5"
-

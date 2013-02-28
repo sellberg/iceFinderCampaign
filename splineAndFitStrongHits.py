@@ -254,7 +254,7 @@ for currentlyExamining in range(numTypes):
 	sType = set(foundTypeFiles[currentlyExamining])
 	if (updateTypes[currentlyExamining] == 1):
 		if (set(foundTypeFiles[currentlyExamining]).issubset(sH5)):
-			if (options.exclude):
+			if options.exclude:
 				#Exclude hits
 				excludedFiles = []
 				print "Reading excluded hits from %s ..." % (dirName + '/' + options.excludeFile + ".txt")
@@ -273,9 +273,9 @@ for currentlyExamining in range(numTypes):
 			t1 = time.time()
 			print "Now splining H5 files in %s/ ..." % (dirName)
 			os.chdir(dirName)
+			storeFlag = currentlyExamining
 			for fname in foundTypeFiles[currentlyExamining]:
 				if (fname not in sExcluded or not options.exclude):
-					storeFlag = foundTypeNumbers[currentlyExamining]
 					diffractionName = source_dir + runtag + '/' + re.sub("-angavg",'',fname)
 					correlationName = source_dir + runtag + '/' + re.sub("-angavg","-xaca",fname)
 					if os.path.exists(diffractionName):
@@ -357,7 +357,7 @@ for currentlyExamining in range(numTypes):
 			
 			os.chdir(originaldir)
 			t2 = time.time()
-			print "Time taken for averaging type" + str(storeFlag) + " = " + str(t2-t1) + " s."
+			print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(t2-t1) + " s."
 			if (options.verbose):
 				print "Mean wavelength = " + str(N.mean(wavelengths[currentlyExamining])) + " A."
 				print "Relative change in wavelength = " + str(N.std(wavelengths[currentlyExamining])/N.mean(wavelengths[currentlyExamining]))
