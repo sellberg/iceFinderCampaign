@@ -399,11 +399,12 @@ for currentlyExamining in range(numTypes):
 						print "The correlation file %s does not exist, ignoring %s" % (correlationName, fname)
 				else:
 					print "The diffraction file %s does not exist, ignoring %s" % (diffractionName, fname)
-				if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
-					if options.peakfit:
-						print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
-					else:
-						print str(fcounter) + " of " + str(numFilesInDir) + " files splined (" + str(fcounter*100/numFilesInDir) + "%)"
+				if (fname not in sExcluded or not options.exclude):
+					if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
+						if options.peakfit:
+							print str(fcounter) + " of " + str(numFilesInDir) + " files splined and fitted (" + str(fcounter*100/numFilesInDir) + "%)"
+						else:
+							print str(fcounter) + " of " + str(numFilesInDir) + " files splined (" + str(fcounter*100/numFilesInDir) + "%)"
 			
 			os.chdir(originaldir)
 			t2 = time.time()
@@ -414,11 +415,11 @@ for currentlyExamining in range(numTypes):
 			if (options.exclude and options.saveExcluded):
 				print "Averaged " + str(ecounter) + " excluded hits from type" + str(foundTypeNumbers[currentlyExamining]) + " separately."
 			if (t2-t1 < 60):
-				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(t2-t1) + " s."
+				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(round(t2-t1)) + " s."
 			elif (t2-t1 < 3600):
-				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/60) + " min, " + str((t2-t1)%60) + " s."
+				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
 			else:
-				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/3600) + " hrs, " + str(int((t2-t1)%3600)/60) + " min, " + str((t2-t1)%60) + " s."
+				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
 			if (options.verbose):
 				print "Mean wavelength = " + str(N.mean(wavelengths[currentlyExamining])) + " A."
 				print "Relative change in wavelength = " + str(N.std(wavelengths[currentlyExamining])/N.mean(wavelengths[currentlyExamining]))
@@ -464,12 +465,6 @@ for dirName in foundTypes:
 		avgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
 		if options.xaca:
 			avgCorrArr[storeFlag] /= typeOccurences[storeFlag]
-		if (options.exclude and options.saveExcluded):
-			excludedAvgArr[storeFlag] /= typeOccurences[storeFlag]
-			excludedAvgRawArr[storeFlag] /= typeOccurences[storeFlag]
-			excludedAvgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
-			if options.xaca:
-				excludedAvgCorrArr[storeFlag] /= typeOccurences[storeFlag]		
 		if (storeFlag > 0):
 			if options.exclude:
 				typeTag = runtag + "_type" + str(foundTypeNumbers[storeFlag]) + "-" + options.excludeFile
@@ -579,7 +574,12 @@ for dirName in foundTypes:
 			#P.show()
 			P.close()
 		
-		if (options.exclude and options.saveExcluded):
+		if (options.exclude and options.saveExcluded and excludedTypeOccurences[storeFlag] > 0.):
+			excludedAvgArr[storeFlag] /= typeOccurences[storeFlag]
+			excludedAvgRawArr[storeFlag] /= typeOccurences[storeFlag]
+			excludedAvgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
+			if options.xaca:
+				excludedAvgCorrArr[storeFlag] /= typeOccurences[storeFlag]		
 			currImg = img_class(excludedAvgArr[storeFlag], excludedAvgAngAvg[storeFlag], avgAngAvgQ, excludedTypeTag, meanWaveLengthInAngs=N.mean(excludedWavelengths[storeFlag]))
 			currImg.draw_img_for_viewing()
 		
@@ -605,7 +605,7 @@ for dirName in foundTypes:
 			entry_3.create_dataset("pos2", data=fitpos2[storeFlag])
 			entry_3.create_dataset("fwhm1", data=fitfwhm1[storeFlag])
 			entry_3.create_dataset("fwhm2", data=fitfwhm2[storeFlag])
-		if (options.exclude and options.saveExcluded):
+		if (options.exclude and options.saveExcluded and excludedTypeOccurences[storeFlag] > 0.):
 			entry_4 = f.create_group("/data/excludedHits")
 			entry_4.create_dataset("diffraction", data=excludedAvgArr[storeFlag])
 			entry_4.create_dataset("rawdata", data=excludedAvgRawArr[storeFlag])
@@ -655,7 +655,7 @@ if options.xaca:
 					typeTag = runtag + "_type0"
 			currImg = img_class(avgCorrArr[storeFlag], avgAngAvg[storeFlag], avgAngAvgQ, typeTag+'_xaca', meanWaveLengthInAngs=N.mean(wavelengths[storeFlag]))
 			currImg.draw_img_for_viewing()
-			if (options.exclude and options.saveExcluded):
+			if (options.exclude and options.saveExcluded and excludedTypeOccurences[storeFlag] > 0.):
 				currImg = img_class(excludedAvgCorrArr[storeFlag], excludedAvgAngAvg[storeFlag], avgAngAvgQ, excludedTypeTag+'_xaca', meanWaveLengthInAngs=N.mean(excludedWavelengths[storeFlag]))
 				currImg.draw_img_for_viewing()				
 		storeFlag += 1

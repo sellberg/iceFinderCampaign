@@ -24,12 +24,15 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", metavar="MAX_VALUE", default=2000)
 parser.add_option("-t", "--threshold", action="store", type="float", dest="threshold", help="sets the intensity threshold for the angular averages: 20 (default), 50, or 100", default=20)
-parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="averages the xaca files along with the angular averages", default=False)
+parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="average the xaca files along with the angular averages", default=False)
 parser.add_option("-p", "--peakfit", action="store_true", dest="peakfit", help="applies the peakfitting analysis to the angular averages", default=False)
 parser.add_option("-S", "--sonemin", action="store", type="float", dest="S1_min", help="lower limit of range used for S1 peak fitting (default: 1.50 A-1)", metavar="MIN_VALUE", default=1.50)
 parser.add_option("-T", "--sonemax", action="store", type="float", dest="S1_max", help="upper limit of range used for S1 peak fitting (default: 2.08 A-1)", metavar="MAX_VALUE", default=2.08)
 parser.add_option("-U", "--stwomin", action="store", type="float", dest="S2_min", help="lower limit of range used for S2 peak fitting (default: 2.64 A-1)", metavar="MIN_VALUE", default=2.64)
 parser.add_option("-W", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default=3.20)
+parser.add_option("-e", "--exclude", action="store_true", dest="exclude", help="average excluded hits", default=False)
+parser.add_option("-f", "--excludefile", action="store", type="string", dest="excludeFile", help="name of txt file with hits to exlude (default: below100ADUs)", metavar="EXCLUDE_FILENAME", default="below100ADUs")
+parser.add_option("-s", "--saveexcluded", action="store_true", dest="saveExcluded", help="flag to save average of excluded hits", default=False)
 (options, args) = parser.parse_args()
 
 # regular, resorted 2012-11-18 (r0167, r0171 r0172) and 2013-02-27 (r0147)
@@ -43,12 +46,12 @@ failedFits20_water = [[832],[234],[1312],[587],[337,19,293],[12,39,3,240,126,90,
 runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
 t50hits_water = [[4028],[536],[1305],[2032],[858,120,788],[78,64,14,545,305,498,102],[111,63,78,84,115],[6,36]]
 t50hits_ice = [[0],[4],[3],[8],[0,0,5],[4,1,5,3,5,67,18],[316,285,34,45,830],[2402,167]]
-failedFits50_water = [[832],[234],[1312],[587],[337,19,293],[12,39,3,241,126,90,20],[11,5,2,8,24],[1,6]]
+failedFits50_water = [[0],[0],[0],[0],[0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0],[0,0]]
 # thresholded hits below 100 ADUs
 runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
 t100hits_water = [[4493],[512],[1077],[2172],[677,158,573],[116,25,17,299,151,396,102],[64,54,62,96,86],[3,36]]
 t100hits_ice = [[0],[1],[3],[0],[0,1,1],[8,6,1,25,25,127,35],[232,189,171,254,417],[319,210]]
-failedFits100_water = [[832],[234],[1312],[587],[337,19,293],[12,39,3,241,126,90,20],[11,5,2,8,24],[1,6]]
+failedFits100_water = [[0],[0],[15],[0],[0,0,0],[0,0,0,0,1,0,0],[0,0,0,0,0],[0,0]]
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [264,235,234,227,224,221,220,219]
@@ -56,6 +59,7 @@ temperatures = [270,253,252,232,227,223,221,220]
 #temperatures = [293,256,250,232,227,223,221,220] # FINAL temperatures from LicThesis
 #distances = [1.085200,11.585200,11.985100,21.585200,30.540800,40.540800,45.540800,50.540800]
 distances = [0.668972,11.548956,12.349269,21.407288,30.603057,40.403027,45.595702,50.619378] # FINAL distances
+thresholds = [20, 50, 100]
 
 # hexagonal ice peaks
 HIceQ = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324}
@@ -75,6 +79,18 @@ sorting_dir = "/reg/data/ana12/cxi/cxi25410/res/iceFinderCampaign/"
 original_dir = os.getcwd() + '/'
 run_tag = "r0144"
 
+thresholdIndex = N.argmax((N.array(thresholds) == options.threshold))
+if not (N.array(thresholds) == options.threshold).any():
+	print "Chosen threshold of %d ADUs has not been sorted, aborting." % (options.threshold)
+	sys.exit(1)
+
+if (options.exclude and options.threshold == 20):
+	print "No hits can be excluded at the original threshold (20 ADUs), aborting."
+	sys.exit(1)
+if (not options.exclude and options.threshold > 20):
+	print "Hits have to be excluded at threshold = %d ADUs (>20 ADUs), enabling the --exclude flag." % options.threshold
+	options.exclude = True
+
 # statistics for hit rates
 nhits20 = [[] for i in runs]
 nhits50 = [[] for i in runs]
@@ -85,7 +101,6 @@ ratio100 = [[] for i in runs]
 hitrate20 = [[] for i in runs]
 hitrate50 = [[] for i in runs]
 hitrate100 = [[] for i in runs]
-thresholds = [20, 50, 100]
 ratios = [[] for i in thresholds]
 ratio_deviations = [[] for i in thresholds]
 hitrates = [[] for i in thresholds]
@@ -93,6 +108,9 @@ hitrate_deviations = [[] for i in thresholds]
 sumhits_water = [[] for i in thresholds]
 sumhits_ice = [[] for i in thresholds]
 sumhits_tot = [[] for i in thresholds]
+runhits_water = [[[] for j in runs] for i in thresholds]
+runhits_ice = [[[] for j in runs] for i in thresholds]
+runhits_tot = [[[] for j in runs] for i in thresholds]
 len_runs = [len(i) for i in runs]
 
 #fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
@@ -114,6 +132,20 @@ for i in N.arange(len(runs)):
 		nhits100[i].append(float(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j]))
 		ratio100[i].append((nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j])/nhits100[i][j])
 		hitrate100[i].append(nhits100[i][j]/nevents[i][j])
+		if options.peakfit:
+			runhits_water[0][i].append(nhits_water[i][j] - failedFits20_water[i][j])
+			runhits_water[1][i].append(nhits_water[i][j] - t50hits_water[i][j] - failedFits50_water[i][j])
+			runhits_water[2][i].append(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j] - failedFits100_water[i][j])
+		else:
+			runhits_water[0][i].append(nhits_water[i][j])
+			runhits_water[1][i].append(nhits_water[i][j] - t50hits_water[i][j])
+			runhits_water[2][i].append(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j])
+		runhits_ice[0][i].append(nhits_ice[i][j])
+		runhits_ice[1][i].append(nhits_ice[i][j] - t50hits_ice[i][j])
+		runhits_ice[2][i].append(nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j])
+		runhits_tot[0][i].append(runhits_water[0][i][j] + runhits_ice[0][i][j])
+		runhits_tot[1][i].append(runhits_water[1][i][j] + runhits_ice[1][i][j])
+		runhits_tot[2][i].append(runhits_water[2][i][j] + runhits_ice[2][i][j])
 	
 	ratios[0].append(N.mean(ratio20[i]))
 	ratios[1].append(N.mean(ratio50[i]))
@@ -247,10 +279,36 @@ water_fitint2 = []
 water_fitpos2 = []
 water_fitfwhm2 = []
 water_fitdeltaq = []
+water_pattern_shape = False
+water_correlation_shape = False
+water_angavg_shape = False
+water_angavgQ_shape = N.array([False])
 ice_pattern = []
 ice_correlation = []
 ice_angavg = []
 ice_angavgQ = []
+ice_pattern_shape = False
+ice_correlation_shape = False
+ice_angavg_shape = False
+ice_angavgQ_shape = N.array([False])
+if (options.exclude and options.saveExcluded):
+	excludedWater_pattern = []
+	excludedWater_correlation = []
+	excludedWater_angavg = []
+	excludedWater_angavgQ = []
+	excludedWater_angavgpos1 = []
+	excludedWater_angavgpos2 = []
+	excludedWater_fitint1 = []
+	excludedWater_fitpos1 = []
+	excludedWater_fitfwhm1 = []
+	excludedWater_fitint2 = []
+	excludedWater_fitpos2 = []
+	excludedWater_fitfwhm2 = []
+	excludedWater_fitdeltaq = []
+	excludedIce_pattern = []
+	excludedIce_correlation = []
+	excludedIce_angavg = []
+	excludedIce_angavgQ = []
 
 #Global parameters
 colmax = options.maxIntens
@@ -410,42 +468,139 @@ for i in N.arange(len(runs)):
 	temp_ice_correlation = []
 	temp_ice_angavg = []
 	temp_ice_angavgQ = []
+	if (options.exclude and options.saveExcluded):
+		excludedTemp_water_pattern = []
+		excludedTemp_water_correlation = []
+		excludedTemp_water_angavg = []
+		excludedTemp_water_angavgQ = []
+		excludedTemp_water_fitint1 = []
+		excludedTemp_water_fitpos1 = []
+		excludedTemp_water_fitfwhm1 = []
+		excludedTemp_water_fitint2 = []
+		excludedTemp_water_fitpos2 = []
+		excludedTemp_water_fitfwhm2 = []
+		excludedTemp_ice_pattern = []
+		excludedTemp_ice_correlation = []
+		excludedTemp_ice_angavg = []
+		excludedTemp_ice_angavgQ = []
 	for j in N.arange(len(runs[i])):
 		run_tag = "r0%s"%(runs[i][j])
 		run_dir = 'output_' + run_tag + '/'
 		#water
 		if (nhits_water[i][j] != 0):
-			if os.path.exists(sorting_dir + run_dir + run_tag + '_type0.h5'):
-				print 'found: ' + sorting_dir + run_dir + run_tag + '_type0.h5'
-				f = H.File(sorting_dir + run_dir + run_tag + '_type0.h5', 'r')
-				temp_water_pattern.append(N.array(f['data']['diffraction']))
-				if options.xaca:
-					temp_water_correlation.append(N.array(f['data']['correlation']))
-				temp_water_angavg.append(N.array(f['data']['angavg']))
-				temp_water_angavgQ.append(N.array(f['data']['angavgQ']))
-				if options.peakfit:
-					temp_water_fitint1.append(N.array(f['data']['peakFit']['int1']))
-					temp_water_fitpos1.append(N.array(f['data']['peakFit']['pos1']))
-					temp_water_fitfwhm1.append(N.array(f['data']['peakFit']['fwhm1']))
-					temp_water_fitint2.append(N.array(f['data']['peakFit']['int2']))
-					temp_water_fitpos2.append(N.array(f['data']['peakFit']['pos2']))
-					temp_water_fitfwhm2.append(N.array(f['data']['peakFit']['fwhm2']))
+			if options.exclude:
+				typeTag = run_tag + "_type0-" + options.excludeFile
+			else:
+				typeTag = run_tag + "_type0"
+			if os.path.exists(sorting_dir + run_dir + typeTag + '.h5'):
+				print 'found: ' + sorting_dir + run_dir + typeTag + '.h5'
+				f = H.File(sorting_dir + run_dir + typeTag + '.h5', 'r')
+				if (runhits_water[thresholdIndex][i][j] > 0):
+					temp_water_pattern.append(N.array(f['data']['diffraction']))
+					water_pattern_shape = N.array(f['data']['diffraction']).shape
+					if options.xaca:
+						temp_water_correlation.append(N.array(f['data']['correlation']))
+						water_correlation_shape = N.array(f['data']['correlation']).shape
+					temp_water_angavg.append(N.array(f['data']['angavg']))
+					water_angavg_shape = N.array(f['data']['angavg']).shape
+					temp_water_angavgQ.append(N.array(f['data']['angavgQ']))
+					water_angavgQ_shape = N.array(f['data']['angavgQ'])
+					if options.peakfit:
+						temp_water_fitint1.append(N.array(f['data']['peakFit']['int1']))
+						temp_water_fitpos1.append(N.array(f['data']['peakFit']['pos1']))
+						temp_water_fitfwhm1.append(N.array(f['data']['peakFit']['fwhm1']))
+						temp_water_fitint2.append(N.array(f['data']['peakFit']['int2']))
+						temp_water_fitpos2.append(N.array(f['data']['peakFit']['pos2']))
+						temp_water_fitfwhm2.append(N.array(f['data']['peakFit']['fwhm2']))
+				elif (water_pattern_shape and (water_correlation_shape or not options.xaca) and water_angavg_shape and water_angavgQ_shape.any()):
+					temp_water_pattern.append(N.zeros(water_pattern_shape))
+					if options.xaca:
+						temp_water_correlation.append(N.zeros(water_correlation_shape))
+					temp_water_angavg.append(N.zeros(water_angavg_shape))
+					temp_water_angavgQ.append(water_angavgQ_shape)
+					print "No water hits for r0%s, paddings zeros." % (runs[i][j])
+				else:
+					print "No water hits for r0%s and shape is unknown, aborting." % (runs[i][j])
+					sys.exit(1)
+				#excluded hits
+				if (options.exclude and options.saveExcluded):
+					if ((runhits_water[0][i][j] - runhits_water[thresholdIndex][i][j]) > 0):
+						excludedTemp_water_pattern.append(N.array(f['data']['excludedHits']['diffraction']))
+						if options.xaca:
+							excludedTemp_water_correlation.append(N.array(f['data']['excludedHits']['correlation']))
+						excludedTemp_water_angavg.append(N.array(f['data']['excludedHits']['angavg']))
+						excludedTemp_water_angavgQ.append(N.array(f['data']['excludedHits']['angavgQ']))
+						if options.peakfit:
+							excludedTemp_water_fitint1.append(N.array(f['data']['excludedHits']['peakFit']['int1']))
+							excludedTemp_water_fitpos1.append(N.array(f['data']['excludedHits']['peakFit']['pos1']))
+							excludedTemp_water_fitfwhm1.append(N.array(f['data']['excludedHits']['peakFit']['fwhm1']))
+							excludedTemp_water_fitint2.append(N.array(f['data']['excludedHits']['peakFit']['int2']))
+							excludedTemp_water_fitpos2.append(N.array(f['data']['excludedHits']['peakFit']['pos2']))
+							excludedTemp_water_fitfwhm2.append(N.array(f['data']['excludedHits']['peakFit']['fwhm2']))
+					elif (water_pattern_shape and (water_correlation_shape or not options.xaca) and water_angavg_shape and water_angavgQ_shape.any()):
+						excludedTemp_water_pattern.append(N.zeros(water_pattern_shape))
+						if options.xaca:
+							excludedTemp_water_correlation.append(N.zeros(water_correlation_shape))
+						excludedTemp_water_angavg.append(N.zeros(water_angavg_shape))
+						excludedTemp_water_angavgQ.append(water_angavgQ_shape)
+						print "No excluded water hits for r0%s, paddings zeros." % (runs[i][j])
+					else:
+						print "No excluded water hits for r0%s and shape is unknown, aborting." % (runs[i][j])
+						sys.exit(1)
+				
 				f.close()
 			else:
-				print 'file missing: ' + sorting_dir + run_dir + run_tag + '_type0.h5'
+				print 'file missing: ' + sorting_dir + run_dir + typeTag + '.h5'
 		#ice
 		if (nhits_ice[i][j] != 0):
-			if os.path.exists(sorting_dir + run_dir + 'type1/' + run_tag + '_type1.h5'):
-				print 'found: ' + sorting_dir + run_dir + 'type1/' + run_tag + '_type1.h5'
-				f = H.File(sorting_dir + run_dir + 'type1/' + run_tag + '_type1.h5', 'r')
-				temp_ice_pattern.append(N.array(f['data']['diffraction']))
-				if options.xaca:
-					temp_ice_correlation.append(N.array(f['data']['correlation']))
-				temp_ice_angavg.append(N.array(f['data']['angavg']))
-				temp_ice_angavgQ.append(N.array(f['data']['angavgQ']))
+			if options.exclude:
+				typeTag = run_tag + "_type1-" + options.excludeFile
+			else:
+				typeTag = run_tag + "_type1"
+			if os.path.exists(sorting_dir + run_dir + 'type1/' + typeTag + '.h5'):
+				print 'found: ' + sorting_dir + run_dir + 'type1/' + typeTag + '.h5'
+				f = H.File(sorting_dir + run_dir + 'type1/' + typeTag + '.h5', 'r')
+				if (runhits_ice[thresholdIndex][i][j] > 0):
+					temp_ice_pattern.append(N.array(f['data']['diffraction']))
+					ice_pattern_shape = N.array(f['data']['diffraction']).shape
+					if options.xaca:
+						temp_ice_correlation.append(N.array(f['data']['correlation']))
+						ice_correlation_shape = N.array(f['data']['correlation']).shape
+					temp_ice_angavg.append(N.array(f['data']['angavg']))
+					ice_angavg_shape = N.array(f['data']['angavg']).shape
+					temp_ice_angavgQ.append(N.array(f['data']['angavgQ']))
+					ice_angavgQ_shape = N.array(f['data']['angavgQ'])
+				elif (ice_pattern_shape and (ice_correlation_shape or not options.xaca) and ice_angavg_shape and ice_angavgQ_shape.any()):
+					temp_ice_pattern.append(N.zeros(ice_pattern_shape))
+					if options.xaca:
+						temp_ice_correlation.append(N.zeros(ice_correlation_shape))
+					temp_ice_angavg.append(N.zeros(ice_angavg_shape))
+					temp_ice_angavgQ.append(ice_angavgQ_shape)
+					print "No ice hits for r0%s, paddings zeros." % (runs[i][j])
+				else:
+					print "No ice hits for r0%s and shape is unknown, aborting." % (runs[i][j])
+					sys.exit(1)
+				#excluded hits
+				if (options.exclude and options.saveExcluded): 
+					if ((runhits_ice[0][i][j] - runhits_ice[thresholdIndex][i][j]) > 0):
+						excludedTemp_ice_pattern.append(N.array(f['data']['excludedHits']['diffraction']))
+						if options.xaca:
+							excludedTemp_ice_correlation.append(N.array(f['data']['excludedHits']['correlation']))
+						excludedTemp_ice_angavg.append(N.array(f['data']['excludedHits']['angavg']))
+						excludedTemp_ice_angavgQ.append(N.array(f['data']['excludedHits']['angavgQ']))
+					elif (ice_pattern_shape and (ice_correlation_shape or not options.xaca) and ice_angavg_shape and ice_angavgQ_shape.any()):
+						excludedTemp_ice_pattern.append(N.zeros(ice_pattern_shape))
+						if options.xaca:
+							excludedTemp_ice_correlation.append(N.zeros(ice_correlation_shape))
+						excludedTemp_ice_angavg.append(N.zeros(ice_angavg_shape))
+						excludedTemp_ice_angavgQ.append(ice_angavgQ_shape)
+						print "No excluded ice hits for r0%s, paddings zeros." % (runs[i][j])
+					else:
+						print "No excluded ice hits for r0%s and shape is unknown, aborting." % (runs[i][j])
+						sys.exit(1)
 				f.close()
 			else:
-				print 'file missing: ' + sorting_dir + run_dir + 'type1/' + run_tag + '_type1.h5'
+				print 'file missing: ' + sorting_dir + run_dir + 'type1/' + typeTag + '.h5'
 	
 	
 	#plot temp_angavg
@@ -482,66 +637,62 @@ for i in N.arange(len(runs)):
 	#P.show()
 	P.close()
 	
-	if (options.threshold == 20):
-		sumwater = float(sum(nhits_water[i]))
-		sumice = float(sum(nhits_ice[i]))
-		if options.peakfit:
-			sumwater = sumwater - sum(failedFits20_water[i])
-	elif (options.threshold == 50):
-		sumwater = float(sum(nhits_water[i]) - sum(t50hits_water[i]))
-		sumice = float(sum(nhits_ice[i]) - sum(t50hits_ice[i]))
-		if options.peakfit:
-			sumwater = sumwater - sum(failedFits50_water[i])	
-	elif (options.threshold == 100):
-		sumwater = float(sum(nhits_water[i]) - sum(t50hits_water[i]) - sum(t100hits_water[i]))
-		sumice = float(sum(nhits_ice[i]) - sum(t50hits_ice[i]) - sum(t100hits_ice[i]))
-		if options.peakfit:
-			sumwater = sumwater - sum(failedFits100_water[i])	
-	else:
-		print "Chosen threshold of %d ADUs has not been sorted, aborting." % (options.threshold)
-		sys.exit(1)
+	sumwater = float(sum(runhits_water[thresholdIndex][i]))
+	sumice = float(sum(runhits_ice[thresholdIndex][i]))
+	if (options.exclude and options.saveExcluded):
+		excludesumwater = float(sum(runhits_water[0][i]) - sum(runhits_water[thresholdIndex][i]))
+		excludesumice = float(sum(runhits_ice[0][i]) - sum(runhits_ice[thresholdIndex][i]))
 	
 	for j in N.arange(len(runs[i])):
-		if (options.threshold == 20):
-			nwater = nhits_water[i][j]
-			nice = nhits_ice[i][j]
-			if options.peakfit:
-				nwater = nwater - failedFits20_water[i][j]
-		elif (options.threshold == 50):
-			nwater = nhits_water[i][j] - t50hits_water[i][j]
-			nice = nhits_ice[i][j] - t50hits_ice[i][j]
-			if options.peakfit:
-				nwater = nwater - failedFits100_water[i][j]
-		elif (options.threshold == 100):
-			nwater = nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j]
-			nice = nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j]
-			if options.peakfit:
-				nwater = nwater - failedFits50_water[i][j]
-		else:
-			print "Chosen threshold of %d ADUs has not been sorted, aborting." % (options.threshold)
-			sys.exit(1)
+		nwater = runhits_water[thresholdIndex][i][j]
+		nice = runhits_ice[thresholdIndex][i][j]
+		if (options.exclude and options.saveExcluded):
+			excludenwater = runhits_water[0][i][j] - runhits_water[thresholdIndex][i][j]
+			excludenice = runhits_ice[0][i][j] - runhits_ice[thresholdIndex][i][j]
 		
-		if (nwater > 0):
+		if (sumwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
 			temp_water_pattern[j] *= nwater/sumwater
-			if (options.xaca):
+			if options.xaca:
 				temp_water_correlation[j] *= nwater/sumwater
-		if (nice > 0):
+		if (sumice > 0):
 			temp_ice_angavg[j] *= nice/sumice
 			temp_ice_pattern[j] *= nice/sumice
-			if (options.xaca):
+			if options.xaca:
 				temp_ice_correlation[j] *= nice/sumice
+		if (options.exclude and options.saveExcluded):
+			if (excludesumwater > 0):
+				excludedTemp_water_angavg[j] *= excludenwater/excludesumwater
+				excludedTemp_water_pattern[j] *= excludenwater/excludesumwater
+				if options.xaca:
+					excludedTemp_water_correlation[j] *= excludenwater/excludesumwater
+			if (excludesumice > 0):
+				excludedTemp_ice_angavg[j] *= excludenice/excludesumice
+				excludedTemp_ice_pattern[j] *= excludenice/excludesumice
+				if options.xaca:
+					excludedTemp_ice_correlation[j] *= excludenice/excludesumice
 	
 	water_angavg.append(N.array(temp_water_angavg).sum(axis=0))
 	water_angavgQ.append(N.array(temp_water_angavgQ).sum(axis=0)/len(runs[i]))
 	water_pattern.append(N.array(temp_water_pattern).sum(axis=0))
-	if (options.xaca):
+	if options.xaca:
 		water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
 	ice_angavg.append(N.array(temp_ice_angavg).sum(axis=0))
 	ice_angavgQ.append(N.array(temp_ice_angavgQ).sum(axis=0)/len(runs[i]))
 	ice_pattern.append(N.array(temp_ice_pattern).sum(axis=0))
-	if (options.xaca):
+	if options.xaca:
 		ice_correlation.append(N.array(temp_ice_correlation).sum(axis=0))	
+	if (options.exclude and options.saveExcluded):
+		excludedWater_angavg.append(N.array(excludedTemp_water_angavg).sum(axis=0))
+		excludedWater_angavgQ.append(N.array(excludedTemp_water_angavgQ).sum(axis=0)/len(runs[i]))
+		excludedWater_pattern.append(N.array(excludedTemp_water_pattern).sum(axis=0))
+		if options.xaca:
+			excludedWater_correlation.append(N.array(excludedTemp_water_correlation).sum(axis=0))
+		excludedIce_angavg.append(N.array(excludedTemp_ice_angavg).sum(axis=0))
+		excludedIce_angavgQ.append(N.array(excludedTemp_ice_angavgQ).sum(axis=0)/len(runs[i]))
+		excludedIce_pattern.append(N.array(excludedTemp_ice_pattern).sum(axis=0))
+		if options.xaca:
+			excludedIce_correlation.append(N.array(excludedTemp_ice_correlation).sum(axis=0))	
 	
 	currImg = img_class(water_pattern[i], ice_pattern[i], [int(sumwater), int(sumice)], "output_runs-T%sK-%dADUs-pattern"%(temperatures[i],options.threshold))
 	currImg.draw_img_for_viewing_pattern()
@@ -555,8 +706,8 @@ for i in N.arange(len(runs)):
 		temp_water_fitint2 = N.array([shot for run in temp_water_fitint2 for shot in run])
 		temp_water_fitpos2 = N.array([shot for run in temp_water_fitpos2 for shot in run])
 		temp_water_fitfwhm2 = N.array([shot for run in temp_water_fitfwhm2 for shot in run])
-		#temp_water_fitpos1 = N.array([temp_water_fitpos1[j] for j in range(len(temp_water_fitpos1)) if (temp_water_fitpos1[j] > 1.7 and temp_water_fitpos1[j] < 2.0] and temp_water_fitpos2[j] > 2.8 and temp_water_fitpos1[j] < 3.2))
-		#temp_water_fitpos2 = N.array([temp_water_fitpos2[j] for j in range(len(temp_water_fitpos2)) if (temp_water_fitpos1[j] > 1.7 and temp_water_fitpos1[j] < 2.0] and temp_water_fitpos2[j] > 2.8 and temp_water_fitpos1[j] < 3.2))
+		#temp_water_fitpos1 = N.array([temp_water_fitpos1[j] for j in range(len(temp_water_fitpos1)) if (temp_water_fitpos1[j] > 1.7 and temp_water_fitpos1[j] < 2.0] and temp_water_fitpos2[j] > 2.8 and temp_water_fitpos2[j] < 3.2))
+		#temp_water_fitpos2 = N.array([temp_water_fitpos2[j] for j in range(len(temp_water_fitpos2)) if (temp_water_fitpos1[j] > 1.7 and temp_water_fitpos1[j] < 2.0] and temp_water_fitpos2[j] > 2.8 and temp_water_fitpos2[j] < 3.2))
 		temp_water_fitdeltaq = temp_water_fitpos2 - temp_water_fitpos1
 		water_fitint1.append(temp_water_fitint1)
 		water_fitpos1.append(temp_water_fitpos1)
@@ -565,6 +716,21 @@ for i in N.arange(len(runs)):
 		water_fitpos2.append(temp_water_fitpos2)
 		water_fitfwhm2.append(temp_water_fitfwhm2)
 		water_fitdeltaq.append(temp_water_fitdeltaq)
+		if (options.exclude and options.saveExcluded):
+			excludedTemp_water_fitint1 = N.array([shot for run in excludedTemp_water_fitint1 for shot in run])
+			excludedTemp_water_fitpos1 = N.array([shot for run in excludedTemp_water_fitpos1 for shot in run])
+			excludedTemp_water_fitfwhm1 = N.array([shot for run in excludedTemp_water_fitfwhm1 for shot in run])
+			excludedTemp_water_fitint2 = N.array([shot for run in excludedTemp_water_fitint2 for shot in run])
+			excludedTemp_water_fitpos2 = N.array([shot for run in excludedTemp_water_fitpos2 for shot in run])
+			excludedTemp_water_fitfwhm2 = N.array([shot for run in excludedTemp_water_fitfwhm2 for shot in run])
+			excludedTemp_water_fitdeltaq = excludedTemp_water_fitpos2 - excludedTemp_water_fitpos1
+			excludedWater_fitint1.append(excludedTemp_water_fitint1)
+			excludedWater_fitpos1.append(excludedTemp_water_fitpos1)
+			excludedWater_fitfwhm1.append(excludedTemp_water_fitfwhm1)
+			excludedWater_fitint2.append(excludedTemp_water_fitint2)
+			excludedWater_fitpos2.append(excludedTemp_water_fitpos2)
+			excludedWater_fitfwhm2.append(excludedTemp_water_fitfwhm2)
+			excludedWater_fitdeltaq.append(excludedTemp_water_fitdeltaq)
 		
 		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
 		index = N.array([((water_angavgQ[i] > options.S1_min)[j] and (water_angavgQ[i] < options.S1_max)[j]) or ((water_angavgQ[i] > options.S2_min)[j] and (water_angavgQ[i] < options.S2_max)[j]) for j in range(len(water_angavgQ[i]))])
@@ -744,6 +910,28 @@ for i in N.arange(len(runs)):
 		entry_5.create_dataset("fwhm1", data=water_fitfwhm1[i])
 		entry_5.create_dataset("fwhm2", data=water_fitfwhm2[i])
 		entry_5.create_dataset("deltaQ", data=water_fitdeltaq[i])
-
+	if (options.exclude and options.saveExcluded):
+		entry_6 = f.create_group("/data/%.1fmm/water/excludedHits"%(distances[i]))
+		entry_6.create_dataset("diffraction", data=excludedWater_pattern[i])
+		if options.xaca:
+			entry_6.create_dataset("correlation", data=excludedWater_correlation[i])
+		entry_6.create_dataset("angavg", data=excludedWater_angavg[i])
+		entry_6.create_dataset("angavg_Q", data=excludedWater_angavgQ[i])
+		entry_7 = f.create_group("/data/%.1fmm/ice/excludedHits"%(distances[i]))
+		entry_7.create_dataset("diffraction", data=excludedIce_pattern[i])
+		if options.xaca:
+			entry_7.create_dataset("correlation", data=excludedIce_correlation[i])
+		entry_7.create_dataset("angavg", data=excludedIce_angavg[i])
+		entry_7.create_dataset("angavg_Q", data=excludedIce_angavgQ[i])
+		if options.peakfit:
+			entry_8 = f.create_group("/data/%.1fmm/water/excludedHits/peakFit"%(distances[i]))
+			entry_8.create_dataset("int1", data=excludedWater_fitint1[i])
+			entry_8.create_dataset("int2", data=excludedWater_fitint2[i])
+			entry_8.create_dataset("pos1", data=excludedWater_fitpos1[i])
+			entry_8.create_dataset("pos2", data=excludedWater_fitpos2[i])
+			entry_8.create_dataset("fwhm1", data=excludedWater_fitfwhm1[i])
+			entry_8.create_dataset("fwhm2", data=excludedWater_fitfwhm2[i])
+			entry_8.create_dataset("deltaQ", data=excludedWater_fitdeltaq[i])
 f.close()
 print "Successfully updated %s" % hdf5tag
+	

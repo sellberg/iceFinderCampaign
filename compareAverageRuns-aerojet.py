@@ -28,29 +28,12 @@ parser.add_option("-U", "--stwomin", action="store", type="float", dest="S2_min"
 parser.add_option("-W", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default=3.20)
 (options, args) = parser.parse_args()
 
-files = ["output_runs-aerojet-all_T+Q_20ADUs-all.h5", "output_runs-aerojet-all_T+Q_20ADUs.h5"]
-tags = ["all", "without failedFits"]
-# resorted 2012-11-18 (r0167, r0171 r0172)
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-nhits_water = [[12077],[3308],[10143],[15702],[3508,789,4986],[320,203,104,2280,1159,919,207],[177,127,143,191,206],[30,75]]
-nhits_ice = [[1],[7],[7],[11],[2,2,8],[51,42,22,266,127,499,140],[786,625,433,749,1705],[2865,630]]
-nevents = [[181089],[130074],[208489],[298050],[158756,62320,316507],[114978,194250,16146,309784,110923,211603,56893],[218817,166847,82800,198154,223197],[60809,213783]]
-# thresholded hits below 50 ADUs
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-t50hits_water = [[4028],[536],[1305],[2032],[858,120,788],[78,64,14,545,305,498,102],[120,63,90,95,115],[6,36]]
-t50hits_ice = [[0],[4],[3],[8],[0,0,5],[4,1,5,3,5,67,18],[312,285,27,34,830],[2402,167]]
-# thresholded hits below 100 ADUs
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-t100hits_water = [[4493],[512],[1077],[2172],[677,158,573],[116,25,17,299,151,396,102],[66,54,63,101,86],[3,36]]
-t100hits_ice = [[0],[1],[3],[0],[0,1,1],[8,6,1,25,25,127,35],[230,189,170,249,417],[319,210]]
-# hits with failed peak fitting (2013-02-26, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-failedFits_water = [[832],[234],[1312],[587],[337,19,293],[12,39,3,241,126,90,20],[11,5,2,8,24],[1,6]]
-#colors = ['b','g','r','c','m','y','k']
+files = ["output_runs-aerojet-all_T+Q_20ADUs-all.h5", "output_runs-aerojet-all_T+Q_20ADUs-failedFits.h5", "output_runs-aerojet-all_T+Q_100ADUs-failedFits.h5"]
+tags = ["20ADUs-all", "20ADUs-without_failedFits", "100ADUs-without_failedFits"]
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [264,235,234,227,224,221,220,219]
-temperatures = [270,253,252,232,227,223,221,220]
-#temperatures = [293,256,250,232,227,223,221,220] # FINAL temperatures from LicThesis
+#temperatures = [270,253,252,232,227,223,221,220] # used by averageRuns-aerojet.py
+temperatures = [293,256,250,232,227,223,221,220] # FINAL temperatures from LicThesis
 #distances = [1.085200,11.585200,11.985100,21.585200,30.540800,40.540800,45.540800,50.540800]
 distances = [0.668972,11.548956,12.349269,21.407288,30.603057,40.403027,45.595702,50.619378] # FINAL distances
 
@@ -59,6 +42,17 @@ ref_temp = [250, 232, 227, 223, 221, 220]
 ref_s1 = N.array([1.972, 1.901, 1.869, 1.851, 1.868, 1.867])
 ref_s2 = N.array([3.065, 3.049, 3.060, 3.060, 3.079, 3.050])
 ref_dq = ref_s2 - ref_s1
+
+# reference statistics from single-shot distributions (not save to file)
+all20_s1_mean = [1.928, 1.884, 1.912, 1.848, 1.834, 1.870, 1.868, 1.817]
+all20_s1_median = [1.923, 1.883, 1.909, 1.855, 1.835, 1.818, 1.814, 1.817]
+all20_s1_std = [0.021, 0.010, 0.020, 0.052, 0.305, 1.477, 0.986, 0.015]
+all20_s2_mean = [3.018, 3.106, 3.160, 2.205, 2.836, 2.991, 3.189, 3.030]
+all20_s2_median = [2.951, 2.975, 2.997, 2.972, 2.994, 3.002, 3.001, 2.998]
+all20_s2_std = [0.597, 0.994, 1.119, 5.582, 3.487, 2.581, 2.823, 0.167]
+all20_dq_mean = [1.090, 1.222, 1.248, 0.358, 1.001, 1.121, 1.321, 1.213]
+all20_dq_median = [1.025, 1.095, 1.087, 1.118, 1.160, 1.186, 1.187, 1.182]
+all20_dq_std = [0.594, 0.994, 1.121, 5.531, 3.475, 2.953, 3.000, 0.165]
 
 # hexagonal ice peaks
 HIceQ = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324}
@@ -91,11 +85,26 @@ if options.peakfit:
 # Imaging class copied from Ingrid Ofte's pyana_misc code
 #########################################################
 class img_class (object):
-	def __init__(self, inarr, inangavg, inangavg_Q, filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(run_tag)):
+	def __init__(self, inarr, inangavg, inangavg_Q, filename, filetag="", normalize=False, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(run_tag)):
 		self.inarr = N.array(inarr).mean(axis=0)
 		self.inarr = self.inarr*(self.inarr>0)
 		self.filename = filename
-		self.inangavg = inangavg
+		if (filetag != ""):
+			self.filetag = filetag[:] #this is necessary to pass filename by value and not by reference (which would change the input parameters outside of the class)
+			for i in range(len(self.filetag)):
+				self.filetag[i] += ": "
+		else:
+			self.filetag = ["" for i in inangavg]
+		if normalize:
+			self.angavgmax = N.zeros(len(inangavg))
+			for i in range(len(inangavg)):
+				self.angavgmax[i] = inangavg[i].max()
+			self.angavgmaxindex = self.angavgmax.argmax()
+			self.inangavg = []
+			for i in range(len(inangavg)):
+				self.inangavg.append(inangavg[i]*self.angavgmax[self.angavgmaxindex]/self.angavgmax[i])
+		else:
+			self.inangavg = inangavg
 		self.inangavgQ = inangavg_Q
 		self.wavelength = meanWaveLengthInAngs
 		self.detectorDistance = detectorDistance
@@ -160,30 +169,35 @@ class img_class (object):
 		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
-		
 		canvas = fig.add_subplot(122)
+		
 		for i in range(len(self.inangavg)):
 			if options.peakfit:
-				p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
+				p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2]
 				index = N.array([((self.inangavgQ[i] > options.S1_min)[j] and (self.inangavgQ[i] < options.S1_max)[j]) or ((self.inangavgQ[i] > options.S2_min)[j] and (self.inangavgQ[i] < options.S2_max)[j]) for j in range(len(self.inangavgQ[i]))])
 				[p1, success] = optimize.leastsq(errfunc, p0[:], args=(self.inangavgQ[i][index],self.inangavg[i][index]))
 				if success:
-					P.plot(self.inangavgQ[i], self.inangavg[i], color="%s"%colors[i], label="S1 = %.3f A-1, S2 = %.3f A-1" % (p1[1], p1[4]))
-					P.plot(self.inangavgQ[i], fitfunc(p1, self.inangavgQ[i]), "%s:"%colors[i])
+					P.plot(self.inangavgQ[i], self.inangavg[i], color="%s"%colors[i%7], label="%sS1 = %.3f A-1, S2 = %.3f A-1" % (self.filetag[i], p1[1], p1[4]))
+					P.plot(self.inangavgQ[i], fitfunc(p1, self.inangavgQ[i]), "%s:"%colors[i%7])
 				else:
-					P.plot(self.inangavgQ[i], self.inangavg[i], "%s-"%colors[i])
+					P.plot(self.inangavgQ[i], self.inangavg[i], "%s-"%colors[i%7])
 			else:
-				P.plot(self.inangavgQ[i], self.inangavg[i], "%s-"%colors[i])
+				P.plot(self.inangavgQ[i], self.inangavg[i], "%s-"%colors[i%7])
 		
 		handles, labels = canvas.get_legend_handles_labels()
-		leg = canvas.legend(handles, labels, loc='lower right')
-		setp(leg.get_texts(), fontsize='medium')
+		if (len(self.inangavg) > 6):
+			canvas.legend(handles, labels, loc='upper left', prop={'size':6})
+		else:
+			canvas.legend(handles, labels, loc='lower right', prop={'size':6})
 		canvas.set_title("Angular Average")
 		P.xlabel("Q (A-1)")
 		P.ylabel("I(Q) (ADU/srad)")
 		pngtag = original_dir + "peakfit-gdvn_%s.png" % (self.filename)
 		P.savefig(pngtag)
 		print "%s saved." % (pngtag)
+		#epstag = original_dir + "peakfit-gdvn_%s.eps" % (self.filename)
+		#P.savefig(epstag, format='eps')
+		#print "%s saved." % (epstag)
 		P.close()
 		#P.show()
 	
@@ -233,6 +247,15 @@ if options.peakfit:
 	water_fitpos2 = [[] for i in distances]
 	water_fitfwhm2 = [[] for i in distances]
 	water_fitdeltaq = [[] for i in distances]
+	singleshot_water_fitpos1_mean = [[] for i in files]
+	singleshot_water_fitpos1_median = [[] for i in files]
+	singleshot_water_fitpos1_std = [[] for i in files]
+	singleshot_water_fitpos2_mean = [[] for i in files]
+	singleshot_water_fitpos2_median = [[] for i in files]
+	singleshot_water_fitpos2_std = [[] for i in files]
+	singleshot_water_fitdeltaq_mean = [[] for i in files]
+	singleshot_water_fitdeltaq_median = [[] for i in files]
+	singleshot_water_fitdeltaq_std = [[] for i in files]
 ice_pattern = [[] for i in distances]
 if options.xaca:
 	ice_correlation = [[] for i in distances]
@@ -255,9 +278,31 @@ for i in range(len(files)):
 				ice_correlation[j].append(N.array(f['data']['%.1fmm'%distances[j]]['ice']['correlation']))
 			ice_angavg[j].append(N.array(f['data']['%.1fmm'%distances[j]]['ice']['angavg']))
 			ice_angavgQ[j].append(N.array(f['data']['%.1fmm'%distances[j]]['ice']['angavg_Q']))
+			if options.peakfit:
+				#Read Gaussian peak fit statistics from single-shot distributions
+				if (i == 0): #was not saved to file for "output_runs-aerojet-all_T+Q_20ADUs-all.h5"
+					singleshot_water_fitpos1_mean[i] = all20_s1_mean
+					singleshot_water_fitpos1_median[i] = all20_s1_median
+					singleshot_water_fitpos1_std[i] = all20_s1_std
+					singleshot_water_fitpos2_mean[i] = all20_s2_mean
+					singleshot_water_fitpos2_median[i] = all20_s2_median
+					singleshot_water_fitpos2_std[i] = all20_s2_std
+					singleshot_water_fitdeltaq_mean[i] = all20_dq_mean
+					singleshot_water_fitdeltaq_median[i] = all20_dq_median
+					singleshot_water_fitdeltaq_std[i] = all20_dq_std
+				else:
+					singleshot_water_fitpos1_mean[i].append(N.mean(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['pos1']))
+					singleshot_water_fitpos1_median[i].append(N.median(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['pos1']))
+					singleshot_water_fitpos1_std[i].append(N.std(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['pos1']))
+					singleshot_water_fitpos2_mean[i].append(N.mean(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['pos2']))
+					singleshot_water_fitpos2_median[i].append(N.median(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['pos2']))
+					singleshot_water_fitpos2_std[i].append(N.std(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['pos2']))
+					singleshot_water_fitdeltaq_mean[i].append(N.mean(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['deltaQ']))
+					singleshot_water_fitdeltaq_median[i].append(N.median(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['deltaQ']))
+					singleshot_water_fitdeltaq_std[i].append(N.std(f['data']['%.1fmm'%distances[j]]['water']['peakFit']['deltaQ']))
 			
 			#Gaussian peak fit statistics
-			if options.peakfit:		
+			if options.peakfit:
 				p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2]
 				index = N.array([((water_angavgQ[j][i] > options.S1_min)[k] and (water_angavgQ[j][i] < options.S1_max)[k]) or ((water_angavgQ[j][i] > options.S2_min)[k] and (water_angavgQ[j][i] < options.S2_max)[k]) for k in range(len(water_angavgQ[j][i]))])
 				[p1, success] = optimize.leastsq(errfunc, p0[:], args=(water_angavgQ[j][i][index],water_angavg[j][i][index]))
@@ -272,6 +317,7 @@ for i in range(len(files)):
 				else:
 					"Gaussian peak fit failed for %.1fmm in %s" % (distances[j], files[i])
 					sys.exit(1)
+				
 		
 		f.close()
 	else:
@@ -280,20 +326,363 @@ for i in range(len(files)):
 
 
 for i in N.arange(len(distances)):
-	currImg = img_class(water_pattern[i], water_angavg[i], water_angavgQ[i], "%.1fmm"%distances[i])
+	currImg = img_class(water_pattern[i], water_angavg[i], water_angavgQ[i], "%.1fmm"%distances[i], tags)
+	currImg.draw_img_for_viewing_water()
+	currImg = img_class(water_pattern[i], water_angavg[i], water_angavgQ[i], "%.1fmm-norm"%distances[i], tags, True)
 	currImg.draw_img_for_viewing_water()
 
 
+temp_water_pattern = [[] for i in files]
+if options.xaca:
+	temp_water_correlation = [[] for i in files]
+temp_water_angavg = [[] for i in files]
+temp_water_angavgQ = [[] for i in files]
+
+temperature_tags = []
+for i in range(len(distances)):
+	temperature_tags.append("T%sK"%temperatures[i])
+	for j in range(len(files)):
+		temp_water_pattern[j].append(water_pattern[i][j])
+		if options.xaca:
+			temp_water_correlation[j].append(water_correlation[i][j])
+		temp_water_angavg[j].append(water_angavg[i][j])
+		temp_water_angavgQ[j].append(water_angavgQ[i][j])
+
+for i in range(len(files)):
+	currImg = img_class(temp_water_pattern[i], temp_water_angavg[i], temp_water_angavgQ[i], "%s"%tags[i], temperature_tags)
+	currImg.draw_img_for_viewing_water()
+	currImg = img_class(temp_water_pattern[i], temp_water_angavg[i], temp_water_angavgQ[i], "%s-norm"%tags[i], temperature_tags, True)
+	currImg.draw_img_for_viewing_water()
+
 #Gaussian peak fit statistics
 if options.peakfit:
-	#for i in range(len(files)):
-	#	txttag = "peakfit-gdvn-%sADUs.txt"%(tags[i])
+	temp_water_fitint1 = [[] for i in files]
+	temp_water_fitpos1 = [[] for i in files]
+	temp_water_fitfwhm1 = [[] for i in files]
+	temp_water_fitint2 = [[] for i in files]
+	temp_water_fitpos2 = [[] for i in files]
+	temp_water_fitfwhm2 = [[] for i in files]
+	temp_water_fitdeltaq = [[] for i in files]
+	
 	for i in range(len(distances)):
+		for j in range(len(files)):
+			temp_water_fitint1[j].append(water_fitint1[i][j])
+			temp_water_fitpos1[j].append(water_fitpos1[i][j])
+			temp_water_fitfwhm1[j].append(water_fitfwhm1[i][j])
+			temp_water_fitint2[j].append(water_fitint2[i][j])
+			temp_water_fitpos2[j].append(water_fitpos2[i][j])
+			temp_water_fitfwhm2[j].append(water_fitfwhm2[i][j])
+			temp_water_fitdeltaq[j].append(water_fitdeltaq[i][j])
+	
+	for i in range(len(files)):
+		csvtag = "peakfit-gdvn_%s.csv"%(tags[i])
+		N.savetxt(csvtag, N.array([temp_water_fitint1[i], temp_water_fitpos1[i], temp_water_fitfwhm1[i], temp_water_fitint2[i], temp_water_fitpos2[i], temp_water_fitfwhm2[i], singleshot_water_fitpos1_mean[i], singleshot_water_fitpos1_median[i], singleshot_water_fitpos1_std[i], singleshot_water_fitpos2_mean[i], singleshot_water_fitpos2_median[i], singleshot_water_fitpos2_std[i], singleshot_water_fitdeltaq_mean[i], singleshot_water_fitdeltaq_median[i], singleshot_water_fitdeltaq_std[i]]), delimiter=",")
+		print "%s saved."%(csvtag)
+	
+	#FIRST PLOT
+	fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+	canvas = fig.add_subplot(131)
+	canvas.set_title("S1 / S2")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_s1, color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(ref_temp, ref_s2, color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(temperatures, temp_water_fitpos1[i], color="%s"%colors[i], marker='o', label="%s" % (tags[i]))
+		P.plot(temperatures, temp_water_fitpos2[i], color="%s"%colors[i], linestyle='--', marker='o')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
+	canvas.set_ylim([1.8, 3.2])
+	
+	canvas = fig.add_subplot(132)
+	canvas.set_title("S1 / S2 mean centered")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_s1 - ref_s1.mean(), color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(ref_temp, ref_s2 - ref_s2.mean(), color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(temperatures, N.array(temp_water_fitpos1[i]) - N.array(temp_water_fitpos1[i])[2:].mean(), color="%s"%colors[i], marker='o', label="%s" % (tags[i]))
+		P.plot(temperatures, N.array(temp_water_fitpos2[i]) - N.array(temp_water_fitpos2[i])[2:].mean(), color="%s"%colors[i], linestyle='--', marker='o')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([-0.06, 0.1])
+	
+	canvas = fig.add_subplot(133)
+	canvas.set_title("deltaQ")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
+	for i in range(len(files)):
+		P.plot(temperatures, temp_water_fitdeltaq[i], color="%s"%colors[i], marker='o', label="%s" % (tags[i]))
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([0.95, 1.25])
+	
+	P.savefig(original_dir + "peakfit-gdvn_vs_T.png")
+	print "peakfit-gdvn_vs_T.png saved."
+	#P.savefig(original_dir + "peakfit-gdvn_vs_T.eps", format='eps')
+	#print "peakfit-gdvn_vs_T.eps saved."
+	#P.show()
+	P.close()
+
+
+	#SECOND PLOT
+	fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+	canvas = fig.add_subplot(131)
+	canvas.set_title("S1 / S2")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_s1, color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(distances[2:], ref_s2, color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(distances, temp_water_fitpos1[i], color="%s"%colors[i], marker='o', label="%s" % (tags[i]))
+		P.plot(distances, temp_water_fitpos2[i], color="%s"%colors[i], linestyle='--', marker='o')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
+	canvas.set_ylim([1.8, 3.2])
+	
+	canvas = fig.add_subplot(132)
+	canvas.set_title("S1 / S2 mean centered")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_s1 - ref_s1.mean(), color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(distances[2:], ref_s2 - ref_s2.mean(), color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(distances, N.array(temp_water_fitpos1[i]) - N.array(temp_water_fitpos1[i])[2:].mean(), color="%s"%colors[i], marker='o', label="%s" % (tags[i]))
+		P.plot(distances, N.array(temp_water_fitpos2[i]) - N.array(temp_water_fitpos2[i])[2:].mean(), color="%s"%colors[i], linestyle='--', marker='o')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([-0.06, 0.1])
+	
+	canvas = fig.add_subplot(133)
+	canvas.set_title("deltaQ")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
+	for i in range(len(files)):
+		P.plot(distances, temp_water_fitdeltaq[i], color="%s"%colors[i], marker='o', label="%s" % (tags[i]))
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper left', prop={'size':6})
+	canvas.set_ylim([0.95, 1.25])
+	
+	P.savefig(original_dir + "peakfit-gdvn_vs_dist.png")
+	print "peakfit-gdvn_vs_dist.png saved."
+	#P.savefig(original_dir + "peakfit-gdvn_vs_dist.eps", format='eps')
+	#print "peakfit-gdvn_vs_dist.eps saved."
+	#P.show()
+	P.close()
+
+
+	#THIRD PLOT
+	fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+	canvas = fig.add_subplot(131)
+	canvas.set_title("S1 / S2")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_s1, color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(ref_temp, ref_s2, color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(temperatures, singleshot_water_fitpos1_median[i], color="%s"%colors[i], linestyle='-', marker='D', label="%s" % (tags[i]))
+		P.plot(temperatures, singleshot_water_fitpos2_median[i], color="%s"%colors[i], linestyle='--', marker='D')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
+	canvas.set_ylim([1.8, 3.2])
+	
+	canvas = fig.add_subplot(132)
+	canvas.set_title("S1 / S2 mean centered")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_s1 - ref_s1.mean(), color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(ref_temp, ref_s2 - ref_s2.mean(), color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(temperatures, N.array(singleshot_water_fitpos1_median[i]) - N.array(singleshot_water_fitpos1_median[i])[2:].mean(), color="%s"%colors[i], linestyle='-', marker='D', label="%s" % (tags[i]))
+		P.plot(temperatures, N.array(singleshot_water_fitpos2_median[i]) - N.array(singleshot_water_fitpos2_median[i])[2:].mean(), color="%s"%colors[i], linestyle='--', marker='D')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([-0.06, 0.1])
+	
+	canvas = fig.add_subplot(133)
+	canvas.set_title("deltaQ")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
+	for i in range(len(files)):
+		P.plot(temperatures, singleshot_water_fitdeltaq_median[i], color="%s"%colors[i], linestyle='-', marker='D', label="%s" % (tags[i]))
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([0.95, 1.25])
+	
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_T.png")
+	print "peakfit-gdvn_single-shot_median_vs_T.png saved."
+	#P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_T.eps", format='eps')
+	#print "peakfit-gdvn_single-shot_median_vs_T.eps saved."
+	#P.show()
+	P.close()
+
+
+	#FOURTH PLOT
+	fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+	canvas = fig.add_subplot(131)
+	canvas.set_title("S1 / S2")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_s1, color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(distances[2:], ref_s2, color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(distances, singleshot_water_fitpos1_median[i], color="%s"%colors[i], linestyle='-', marker='D', label="%s" % (tags[i]))
+		P.plot(distances, singleshot_water_fitpos2_median[i], color="%s"%colors[i], linestyle='--', marker='D')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
+	canvas.set_ylim([1.8, 3.2])
+	
+	canvas = fig.add_subplot(132)
+	canvas.set_title("S1 / S2 mean centered")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_s1 - ref_s1.mean(), color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(distances[2:], ref_s2 - ref_s2.mean(), color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.plot(distances, N.array(singleshot_water_fitpos1_median[i]) - N.array(singleshot_water_fitpos1_median[i])[2:].mean(), color="%s"%colors[i], linestyle='-', marker='D', label="%s" % (tags[i]))
+		P.plot(distances, N.array(singleshot_water_fitpos2_median[i]) - N.array(singleshot_water_fitpos2_median[i])[2:].mean(), color="%s"%colors[i], linestyle='--', marker='D')
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([-0.06, 0.1])
+	
+	canvas = fig.add_subplot(133)
+	canvas.set_title("deltaQ")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
+	for i in range(len(files)):
+		P.plot(distances, singleshot_water_fitdeltaq_median[i], color="%s"%colors[i], linestyle='-', marker='D', label="%s" % (tags[i]))
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper left', prop={'size':6})
+	canvas.set_ylim([0.95, 1.25])
+	
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_dist.png")
+	print "peakfit-gdvn_single-shot_median_vs_dist.png saved."
+	#P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_dist.eps", format='eps')
+	#print "peakfit-gdvn_single-shot_median_vs_dist.eps saved."
+	#P.show()
+	P.close()
+	
+	
+	#FIFTH PLOT
+	fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+	canvas = fig.add_subplot(131)
+	canvas.set_title("S1 / S2")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_s1, color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(ref_temp, ref_s2, color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.errorbar(temperatures, singleshot_water_fitpos1_mean[i], yerr=singleshot_water_fitpos1_std[i], fmt="-%ss"%colors[i], label="%s" % (tags[i]))
+		P.errorbar(temperatures, singleshot_water_fitpos2_mean[i], yerr=singleshot_water_fitpos2_std[i], fmt="--%ss"%colors[i])
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
+	canvas.set_ylim([1.8, 3.2])
+	
+	canvas = fig.add_subplot(132)
+	canvas.set_title("S1 / S2 mean centered")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_s1 - ref_s1.mean(), color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(ref_temp, ref_s2 - ref_s2.mean(), color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.errorbar(temperatures, N.array(singleshot_water_fitpos1_mean[i]) - N.array(singleshot_water_fitpos1_mean[i])[2:].mean(), yerr=singleshot_water_fitpos1_std[i], fmt="-%ss"%colors[i], label="%s" % (tags[i]))
+		P.errorbar(temperatures, N.array(singleshot_water_fitpos2_mean[i]) - N.array(singleshot_water_fitpos2_mean[i])[2:].mean(), yerr=singleshot_water_fitpos2_std[i], fmt="--%ss"%colors[i])
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([-0.06, 0.1])
+	
+	canvas = fig.add_subplot(133)
+	canvas.set_title("deltaQ")
+	P.xlabel("T (K)")
+	P.ylabel("Q (A-1)")
+	P.plot(ref_temp, ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
+	for i in range(len(files)):
+		P.errorbar(temperatures, singleshot_water_fitdeltaq_mean[i], yerr=singleshot_water_fitdeltaq_std[i], fmt="%ss"%colors[i], label="%s" % (tags[i]))
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([0.95, 1.25])
+	
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_T.png")
+	print "peakfit-gdvn_single-shot_mean_vs_T.png saved."
+	#P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_T.eps", format='eps')
+	#print "peakfit-gdvn_single-shot_mean_vs_T.eps saved."
+	#P.show()
+	P.close()
+	
+	
+	#SIXTH PLOT
+	fig = P.figure(num=None, figsize=(18.5, 5), dpi=100, facecolor='w', edgecolor='k')
+	canvas = fig.add_subplot(131)
+	canvas.set_title("S1 / S2")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_s1, color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(distances[2:], ref_s2, color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.errorbar(distances, singleshot_water_fitpos1_mean[i], yerr=singleshot_water_fitpos1_std[i], fmt="-%ss"%colors[i], label="%s" % (tags[i]))
+		P.errorbar(distances, singleshot_water_fitpos2_mean[i], yerr=singleshot_water_fitpos2_std[i], fmt="--%ss"%colors[i])
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
+	canvas.set_ylim([1.8, 3.2])
+	
+	canvas = fig.add_subplot(132)
+	canvas.set_title("S1 / S2 mean centered")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_s1 - ref_s1.mean(), color='k', marker='o', label="Huang_resubmitted120910")
+	P.plot(distances[2:], ref_s2 - ref_s2.mean(), color='k', linestyle='--', marker='o')
+	for i in range(len(files)):
+		P.errorbar(distances, N.array(singleshot_water_fitpos1_mean[i]) - N.array(singleshot_water_fitpos1_mean[i])[2:].mean(), yerr=singleshot_water_fitpos1_std[i], fmt="-%ss"%colors[i], label="%s" % (tags[i]))
+		P.errorbar(distances, N.array(singleshot_water_fitpos2_mean[i]) - N.array(singleshot_water_fitpos2_mean[i])[2:].mean(), yerr=singleshot_water_fitpos2_std[i], fmt="--%ss"%colors[i])
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.set_ylim([-0.06, 0.1])
+	
+	canvas = fig.add_subplot(133)
+	canvas.set_title("deltaQ")
+	P.xlabel("distance (mm)")
+	P.ylabel("Q (A-1)")
+	P.plot(distances[2:], ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
+	for i in range(len(files)):
+		P.errorbar(distances, singleshot_water_fitdeltaq_mean[i], yerr=singleshot_water_fitdeltaq_std[i], fmt="%ss"%colors[i], label="%s" % (tags[i]))
+	
+	handles, labels = canvas.get_legend_handles_labels()
+	canvas.legend(handles, labels, loc='upper left', prop={'size':6})
+	canvas.set_ylim([0.95, 1.25])
+	
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_dist.png")
+	print "peakfit-gdvn_single-shot_mean_vs_dist.png saved."
+	#P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_dist.eps", format='eps')
+	#print "peakfit-gdvn_single-shot_mean_vs_dist.eps saved."
+	#P.show()
+	P.close()
+	
+	
+	#for i in range(len(distances)):
 		#txttag = "peakfit-gdvn_%.1fmm.txt"%(distances[i])
 		#N.array([water_fitint1[i], water_fitpos1[i], water_fitfwhm1[i], water_fitint2[i], water_fitpos2[i], water_fitfwhm2[i]]).tofile(txttag, sep = "\n", format="%lf")
 		#print "%s saved."%(txttag)
-		csvtag = "peakfit-gdvn_%.1fmm.csv"%(distances[i])
-		N.savetxt(csvtag, N.array([water_fitint1[i], water_fitpos1[i], water_fitfwhm1[i], water_fitint2[i], water_fitpos2[i], water_fitfwhm2[i]]), delimiter=",")
-		print "%s saved."%(csvtag)
-	
-	print "include plots of peakfit_2gaussian_finalQ-S1_S2.png, peakfit_2gaussian_finalQ-S1_S2_with_ref-diff.png"
+		#csvtag = "peakfit-gdvn_%.1fmm.csv"%(distances[i])
+		#N.savetxt(csvtag, N.array([water_fitint1[i], water_fitpos1[i], water_fitfwhm1[i], water_fitint2[i], water_fitpos2[i], water_fitfwhm2[i]]), delimiter=",")
+		#print "%s saved."%(csvtag)
