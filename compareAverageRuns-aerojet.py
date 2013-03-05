@@ -28,8 +28,8 @@ parser.add_option("-U", "--stwomin", action="store", type="float", dest="S2_min"
 parser.add_option("-W", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default=3.20)
 (options, args) = parser.parse_args()
 
-files = ["output_runs-aerojet-all_T+Q_20ADUs-all.h5", "output_runs-aerojet-all_T+Q_20ADUs-failedFits.h5", "output_runs-aerojet-all_T+Q_100ADUs-failedFits.h5"]
-tags = ["20ADUs-all", "20ADUs-without_failedFits", "100ADUs-without_failedFits"]
+files = ["output_runs-aerojet-all_T+Q_20ADUs-all.h5", "output_runs-aerojet-all_T+Q_20ADUs-failedFits.h5", "output_runs-aerojet-all_T+Q_50ADUs-failedFits.h5", "output_runs-aerojet-all_T+Q_100ADUs-failedFits.h5"]
+tags = ["20ADUs-all", "20ADUs-without_failedFits", "50ADUs-without_failedFits", "100ADUs-without_failedFits"]
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [264,235,234,227,224,221,220,219]
 #temperatures = [270,253,252,232,227,223,221,220] # used by averageRuns-aerojet.py
@@ -195,9 +195,9 @@ class img_class (object):
 		pngtag = original_dir + "peakfit-gdvn_%s.png" % (self.filename)
 		P.savefig(pngtag)
 		print "%s saved." % (pngtag)
-		#epstag = original_dir + "peakfit-gdvn_%s.eps" % (self.filename)
-		#P.savefig(epstag, format='eps')
-		#print "%s saved." % (epstag)
+		epstag = original_dir + "peakfit-gdvn_%s.eps" % (self.filename)
+		P.savefig(epstag, format='eps')
+		print "%s saved." % (epstag)
 		P.close()
 		#P.show()
 	
@@ -406,7 +406,7 @@ if options.peakfit:
 		P.plot(temperatures, N.array(temp_water_fitpos2[i]) - N.array(temp_water_fitpos2[i])[2:].mean(), color="%s"%colors[i], linestyle='--', marker='o')
 	
 	handles, labels = canvas.get_legend_handles_labels()
-	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
 	canvas.set_ylim([-0.06, 0.1])
 	
 	canvas = fig.add_subplot(133)
@@ -423,8 +423,8 @@ if options.peakfit:
 	
 	P.savefig(original_dir + "peakfit-gdvn_vs_T.png")
 	print "peakfit-gdvn_vs_T.png saved."
-	#P.savefig(original_dir + "peakfit-gdvn_vs_T.eps", format='eps')
-	#print "peakfit-gdvn_vs_T.eps saved."
+	P.savefig(original_dir + "peakfit-gdvn_vs_T.eps", format='eps')
+	print "peakfit-gdvn_vs_T.eps saved."
 	#P.show()
 	P.close()
 
@@ -473,8 +473,8 @@ if options.peakfit:
 	
 	P.savefig(original_dir + "peakfit-gdvn_vs_dist.png")
 	print "peakfit-gdvn_vs_dist.png saved."
-	#P.savefig(original_dir + "peakfit-gdvn_vs_dist.eps", format='eps')
-	#print "peakfit-gdvn_vs_dist.eps saved."
+	P.savefig(original_dir + "peakfit-gdvn_vs_dist.eps", format='eps')
+	print "peakfit-gdvn_vs_dist.eps saved."
 	#P.show()
 	P.close()
 
@@ -506,7 +506,7 @@ if options.peakfit:
 		P.plot(temperatures, N.array(singleshot_water_fitpos2_median[i]) - N.array(singleshot_water_fitpos2_median[i])[2:].mean(), color="%s"%colors[i], linestyle='--', marker='D')
 	
 	handles, labels = canvas.get_legend_handles_labels()
-	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
 	canvas.set_ylim([-0.06, 0.1])
 	
 	canvas = fig.add_subplot(133)
@@ -523,8 +523,8 @@ if options.peakfit:
 	
 	P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_T.png")
 	print "peakfit-gdvn_single-shot_median_vs_T.png saved."
-	#P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_T.eps", format='eps')
-	#print "peakfit-gdvn_single-shot_median_vs_T.eps saved."
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_T.eps", format='eps')
+	print "peakfit-gdvn_single-shot_median_vs_T.eps saved."
 	#P.show()
 	P.close()
 
@@ -573,8 +573,8 @@ if options.peakfit:
 	
 	P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_dist.png")
 	print "peakfit-gdvn_single-shot_median_vs_dist.png saved."
-	#P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_dist.eps", format='eps')
-	#print "peakfit-gdvn_single-shot_median_vs_dist.eps saved."
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_median_vs_dist.eps", format='eps')
+	print "peakfit-gdvn_single-shot_median_vs_dist.eps saved."
 	#P.show()
 	P.close()
 	
@@ -606,7 +606,7 @@ if options.peakfit:
 		P.errorbar(temperatures, N.array(singleshot_water_fitpos2_mean[i]) - N.array(singleshot_water_fitpos2_mean[i])[2:].mean(), yerr=singleshot_water_fitpos2_std[i], fmt="--%ss"%colors[i])
 	
 	handles, labels = canvas.get_legend_handles_labels()
-	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
+	canvas.legend(handles, labels, loc='center right', prop={'size':6})
 	canvas.set_ylim([-0.06, 0.1])
 	
 	canvas = fig.add_subplot(133)
@@ -615,7 +615,7 @@ if options.peakfit:
 	P.ylabel("Q (A-1)")
 	P.plot(ref_temp, ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
 	for i in range(len(files)):
-		P.errorbar(temperatures, singleshot_water_fitdeltaq_mean[i], yerr=singleshot_water_fitdeltaq_std[i], fmt="%ss"%colors[i], label="%s" % (tags[i]))
+		P.errorbar(temperatures, singleshot_water_fitdeltaq_mean[i], yerr=singleshot_water_fitdeltaq_std[i], fmt="-%ss"%colors[i], label="%s" % (tags[i]))
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels, loc='upper right', prop={'size':6})
@@ -623,8 +623,8 @@ if options.peakfit:
 	
 	P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_T.png")
 	print "peakfit-gdvn_single-shot_mean_vs_T.png saved."
-	#P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_T.eps", format='eps')
-	#print "peakfit-gdvn_single-shot_mean_vs_T.eps saved."
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_T.eps", format='eps')
+	print "peakfit-gdvn_single-shot_mean_vs_T.eps saved."
 	#P.show()
 	P.close()
 	
@@ -665,7 +665,7 @@ if options.peakfit:
 	P.ylabel("Q (A-1)")
 	P.plot(distances[2:], ref_dq, color='k', marker='o', label="Huang_resubmitted120910")
 	for i in range(len(files)):
-		P.errorbar(distances, singleshot_water_fitdeltaq_mean[i], yerr=singleshot_water_fitdeltaq_std[i], fmt="%ss"%colors[i], label="%s" % (tags[i]))
+		P.errorbar(distances, singleshot_water_fitdeltaq_mean[i], yerr=singleshot_water_fitdeltaq_std[i], fmt="-%ss"%colors[i], label="%s" % (tags[i]))
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels, loc='upper left', prop={'size':6})
@@ -673,8 +673,8 @@ if options.peakfit:
 	
 	P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_dist.png")
 	print "peakfit-gdvn_single-shot_mean_vs_dist.png saved."
-	#P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_dist.eps", format='eps')
-	#print "peakfit-gdvn_single-shot_mean_vs_dist.eps saved."
+	P.savefig(original_dir + "peakfit-gdvn_single-shot_mean_vs_dist.eps", format='eps')
+	print "peakfit-gdvn_single-shot_mean_vs_dist.eps saved."
 	#P.show()
 	P.close()
 	

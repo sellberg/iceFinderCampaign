@@ -278,7 +278,7 @@ for currentlyExamining in range(numTypes):
 	sType = set(foundTypeFiles[currentlyExamining])
 	if (updateTypes[currentlyExamining] == 1):
 		if (set(foundTypeFiles[currentlyExamining]).issubset(sH5)):
-			if options.exclude:
+			if (options.exclude and os.path.exists(dirName + '/' + options.excludeFile + ".txt")):
 				#Exclude hits
 				excludedFiles = []
 				print "Reading excluded hits from %s ..." % (dirName + '/' + options.excludeFile + ".txt")
@@ -292,7 +292,9 @@ for currentlyExamining in range(numTypes):
 				print "Found %d hits to exclude." % (len(sType.intersection(sExcluded)))
 				numFilesInDir = len(sType.difference(sExcluded))
 			else:
-				sExcluded = sType
+				if options.exclude:
+					print "%s does not exist, no hits are excluded." % (dirName + '/' + options.excludeFile + ".txt")
+				sExcluded = set([])
 			
 			t1 = time.time()
 			print "Now splining H5 files in %s/ ..." % (dirName)
