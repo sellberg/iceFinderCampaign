@@ -1,0 +1,14 @@
+#!/bin/tcsh
+
+
+switch ($1)
+
+	case res25410:
+	rsync -av --exclude 'output*' --exclude 'backup' --exclude 'temp' --exclude 'hits_*' --exclude 'plots_*' --exclude 'images*' --exclude '*h5' --exclude '*png' --exclude '*eps' --exclude '*txt' --exclude '*~' sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi25410/res/iceFinderCampaign/ ./psexport/res25410/
+	breaksw
+	
+	case res74613:
+	rsync -av --exclude 'output*' --exclude 'backup' --exclude 'temp' --exclude 'images' --exclude '*h5' --exclude '*png' --exclude '*eps' --exclude '*txt' --exclude '*~' sellberg@psexport.slac.stanford.edu:/reg/d/psdm/cxi/cxi74613/res/iceFinderCampaign/ ./psexport/res74613/
+	breaksw
+	
+endsw
