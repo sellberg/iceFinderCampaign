@@ -399,7 +399,12 @@ for currentlyExamining in range(numTypes+1):
 			fcounter += 1
 		os.chdir(originaldir)
 		t2 = time.time()
-		print "time taken = " + str(t2-t1)
+		if (t2-t1 < 60):
+			print "time taken = " + str(round(t2-t1)) + " s."
+		elif (t2-t1 < 3600):
+			print "time taken = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
+		else:
+			print "time taken = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
 		print "mean wavelength = " + str(N.mean(waveLengths[currentlyExamining]))
 		print "relative change in wavelength = " + str(N.std(waveLengths[currentlyExamining])/N.mean(waveLengths[currentlyExamining]))
 		print "max-min wavelength = " + str(N.max(waveLengths[currentlyExamining]) - N.min(waveLengths[currentlyExamining]))

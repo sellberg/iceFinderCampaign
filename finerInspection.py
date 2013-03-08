@@ -409,11 +409,11 @@ for fname in anomalies:
 
 t2 = time.time()
 if (t2-t1 < 60):
-	print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(round(t2-t1)) + " s."
+	print "time taken = " + str(round(t2-t1)) + " s."
 elif (t2-t1 < 3600):
-	print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
+	print "time taken = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
 else:
-	print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
+	print "time taken = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
 
 #View the averages. Tagging disabled.
 for i in range(numTypes):
