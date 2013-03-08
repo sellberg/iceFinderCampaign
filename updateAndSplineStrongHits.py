@@ -17,7 +17,7 @@ parser.add_option("-M", "--min", action="store", type="float", dest="min_value",
 parser.add_option("-X", "--max", action="store", type="float", dest="max_value", help="ignore intensities above this q-value in splined angular average (default: 3.48 A-1)", metavar="MAX_VALUE", default="3.48")
 parser.add_option("-D", "--delta", action="store", type="float", dest="delta_value", help="spline intensities with this interval in angular average (default: 0.001 A-1)", metavar="DELTA_VALUE", default="0.001")
 parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="copies the xaca files along with the angular averages", default=False)
-#parser.add_option("-c", "--xcca", action="store_true", dest="xcca", help="copies the xcca files along with the angular averages", default=False)
+#parser.add_option("-x", "--xcca", action="store_true", dest="xcca", help="copies the xcca files along with the angular averages", default=False)
 parser.add_option("-P", "--nq", action="store", type="int", dest="nQ", help="number of Q bins in correlation file (default: 151)", metavar="N_Q", default="151")
 parser.add_option("-Q", "--nphi", action="store", type="int", dest="nPhi", help="number of Phi bins in correlation file (default: 181)", metavar="N_PHI", default="181")
 parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="OUTPUT_DIR", default="output")  

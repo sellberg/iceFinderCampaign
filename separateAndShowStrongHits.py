@@ -13,7 +13,9 @@ parser = OptionParser()
 parser.add_option("-r", "--run", action="store", type="string", dest="runNumber", help="run number you wish to view", metavar="xxxx", default="")
 parser.add_option("-W", "--weakHitsTreatment", action="store", type="int", dest="weakHitsTreatment", help="(default)0, stores ang_avg.h5 file names as rxxxx_weakAvgFiles.txt;\n1, also shows averages both ang_avg and 2D patterns (slow);", metavar="0 or 1", default=0)
 parser.add_option("-S", "--strongHitsTreatment", action="store", type="int", dest="strongHitsTreatment", help="(default)0, stores ang_avg.h5 filenames as rxxxx_strongAvgFiles.txt in output dir;\n1, also shows averages both ang_avg and 2D patterns (slow);", metavar="0 or 1", default=0)
-parser.add_option("-c", "--copyFiles", action="store_true", dest="store_files", help="copy *.angavg.h5 files into output directory",default=False)
+parser.add_option("-a", "--xaca", action="store_true", dest="xaca", help="copy *xaca.h5 files into output directory",default=False)
+#parser.add_option("-x", "--xcca", action="store_true", dest="xcca", help="copy *xcca.h5 files into output directory",default=False)
+parser.add_option("-c", "--copyFiles", action="store_true", dest="store_files", help="copy *angavg.h5 files into output directory",default=False)
 parser.add_option("-o", "--outputdir", action="store", type="string", dest="outputDir", help="output directory (default: output_rxxxx)", metavar="myOutputDir", default="output")  
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 (options, args) = parser.parse_args()
@@ -25,8 +27,15 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="
 # Be careful of the trailing "/"; 
 # ensure you have the necessary read/write permissions.
 ########################################################
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# SCRATCH
+#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+# RES
+#source_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
+# FTC
+source_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
+ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'
@@ -226,9 +235,16 @@ if(options.store_files):
 		print "%d strong hits copied earlier. Will copy only %d of the remainder" % (len(foundFiles), len(diffFiles))
 		for fname in diffFiles: 
 			diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
+			correlationName = source_dir+runtag+"/"+re.sub("-angavg","-xaca",fname)
 			angAvgName = ang_avg_dir + runtag + '/' + fname
 			if(os.path.exists(diffractionName)):
 				shutil.copyfile(angAvgName, write_dir+fname)
+			else:
+				print "%s is missing, not copying %s" % (diffractionName, angAvgName)
+			if (options.xaca and os.path.exists(correlationName)):
+				shutil.copyfile(angAvgName, write_dir+fname)
+			elif options.xaca:
+				print "%s is missing and was not copied over" % (correlationName)
 
 ########################################################
 # Weakly scattering files
@@ -237,7 +253,8 @@ waveLengths=[]
 if (options.weakHitsTreatment == 1 and len(weakFiles) > 0):
 	print "averaging weak hits..."
 	arr  = []
-	avg = N.zeros(1233)
+	avg = N.zeros(1233) #cxi25410
+	#avg = N.zeros(1191) #cxi74613
 	fcounter = 0
 	for fname in weakFiles:
 		diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
@@ -275,7 +292,8 @@ waveLengths=[]
 if(options.strongHitsTreatment == 1 and len(strongFiles) > 0):
 	print "averaging strong hits"
 	arr  = []
-	avg = N.zeros(1233)
+	avg = N.zeros(1233) #cxi25410
+	#avg = N.zeros(1191) #cxi74613
 	fcounter = 0
 	numStrongFiles = len(strongFiles)
 	numPresentStrongFiles = 0

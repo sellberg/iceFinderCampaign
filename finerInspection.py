@@ -3,9 +3,8 @@ import numpy as N
 from numpy import linalg as LA
 import h5py as H
 import glob as G
-import os 
-import re
 import pylab as P
+import sys, os, re, shutil, subprocess, time
 from myModules import extractDetectorDist as eDD
 from optparse import OptionParser
 
@@ -65,6 +64,9 @@ for i in files:
 os.chdir(originaldir)
 masterArr = N.array(arr)
 numData = len(masterArr)
+if (numData == 0):
+	print "no ang_avgs in %s aborting." % write_dir
+	sys.exit(1)
 angAvgLen = len(masterArr[0])
 
 #Normalize to water ring
@@ -123,7 +125,7 @@ class img_class (object):
 		global storeFlag
 		self.tag = 0
 
-	def on_keypress_for_tagging(self,event):
+	def on_keypress_for_tagging(self, event):
 		global colmax
 		global colmin
 		global storeFlag
@@ -160,7 +162,7 @@ class img_class (object):
 			P.clim(colmin, colmax)
 			P.draw()
 
-	def on_keypress_for_viewing(self,event):
+	def on_keypress_for_viewing(self, event):
 		global colmax
 		global colmin
 		global storeFlag
@@ -204,6 +206,7 @@ class img_class (object):
 			print "Press 'p' to save PNG."
 		global colmax
 		global colmin
+		P.close('all')
 		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
 		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_viewing)
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
@@ -310,14 +313,16 @@ cutoff = int(input("ice/water cutoff? "))
 # Loop to display all non-anomalous H5 files. 
 ########################################################
 
-avgArr = N.zeros((numTypes+1,1760,1760))
-avgRadAvg = N.zeros((numTypes+1,1233))
+avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
+avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
+#avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
+#avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
 typeOccurences = N.zeros(numTypes+1)
 waveLengths={}
 for i in range(numTypes):
 	waveLengths[i] = []
 
-if(options.averageWaterTypes):
+if(options.averageWaterTypes and len(sortedFileNames[:cutoff]) > 0):
 	print "averaging water-only types.."
 	for fname in sortedFileNames[:cutoff]:
 		diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
@@ -358,8 +363,10 @@ waveLengths={}
 rangeNumTypes = range(1,numTypes+1)
 for i in range(numTypes):
 	waveLengths[i] = []
-	
+
 #Tag anomalies
+fcounter = 0
+t1 = time.time()
 for fname in anomalies:
 	storeFlag=0
 	diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
@@ -368,6 +375,7 @@ for fname in anomalies:
 	currWavelengthInAngs=f['LCLS']['photon_wavelength_A'][0]
 	currDetectorDist=(1.E-3)*f['LCLS']['detectorPosition'][0] 
 	f.close()
+	correlationName = write_dir+re.sub("-angavg","-xaca",fname)
 	angAvgName = write_dir + fname
 	f = H.File(angAvgName, 'r')
 	if (len(N.array(f['data']['data'])) == 2):
@@ -375,7 +383,7 @@ for fname in anomalies:
 	else:
 		davg = N.array(f['data']['data'][0])
 	f.close()
-	print "wavelength:%lf, detectorPos:%lf"%(currWavelengthInAngs,currDetectorDist)
+	print "%d: wavelength = %lf A, detectorPos = %lf mm"%(cutoff+fcounter,currWavelengthInAngs,1000*currDetectorDist)
 	currImg = img_class(d, davg, fname, meanWaveLengthInAngs=currWavelengthInAngs, detectorDistance=currDetectorDist)
 	currImg.draw_img_for_tagging()
 	
@@ -390,6 +398,19 @@ for fname in anomalies:
 		print "mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag]
 		os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
 		os.system("cp " + diffractionName + " " + write_anomaly_dir_types[storeFlag])
+		if(os.path.exists(correlationName)):
+			print "mv " + correlationName + " " + write_anomaly_dir_types[storeFlag]
+			os.system("mv " + correlationName + " " + write_anomaly_dir_types[storeFlag])
+	
+	fcounter += 1
+
+t2 = time.time()
+if (t2-t1 < 60):
+	print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(round(t2-t1)) + " s."
+elif (t2-t1 < 3600):
+	print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
+else:
+	print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
 
 #View the averages. Tagging disabled.
 for i in range(numTypes):

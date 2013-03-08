@@ -16,7 +16,7 @@ parser.add_option("-s", "--step", action="store_true", dest="stepThroughImages",
 parser.add_option("-o", "--outputDir", action="store", type="string", dest="outputDir", help="output directory (also inspection directory) will be appended by run number (default: output_rxxxx); separate types will be stored in output_rxxxx/anomaly/type[1-3]", default="output")
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value", default=10000)
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
-parser.add_option("-c", "--cutoffFluctuation", action="store", type="float", dest="cutoffFluc", help="masks out pixels with relative fluctuations below this value", default=0.0)
+parser.add_option("-C", "--cutoffFluctuation", action="store", type="float", dest="cutoffFluc", help="masks out pixels with relative fluctuations below this value", default=0.0)
 (options, args) = parser.parse_args()
 
 ########################################################
@@ -304,12 +304,16 @@ class img_class (object):
 		P.show() 
 
 
-avgArr = N.zeros((numTypes+1,1760,1760))
-avgRadAvg = N.zeros((numTypes+1,1233))
+avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
+avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
+#avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
+#avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
 typeOccurences = N.zeros(numTypes+1)
 
-avgTotArr = N.zeros((1760,1760))
-avgTotSqArr = N.zeros((1760,1760))
+avgTotArr = N.zeros((1760,1760)) #cxi25410
+avgTotSqArr = N.zeros((1760,1760)) #cxi25410
+#avgTotArr = N.zeros((1764,1764)) #cxi74613
+#avgTotSqArr = N.zeros((1764,1764)) #cxi74613
 totCounter = 0
 
 waveLengths={}
@@ -360,15 +364,28 @@ for currentlyExamining in range(numTypes+1):
 
 				if(storeFlag != currentlyExamining):
 					diffractionName = write_anomaly_dir_types[currentlyExamining]+"/"+re.sub("-angavg",'',fname)
+					correlationName = write_anomaly_dir_types[currentlyExamining]+"/"+re.sub("-angavg","-xaca",fname)
 					if(storeFlag != 0):
-						print "moving angavg and pattern from " + str(currentlyExamining) + " to " + str(storeFlag)
-						os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
-						os.system("mv " + diffractionName + " " + write_anomaly_dir_types[storeFlag])
+						if (os.path.exists(correlationName):
+							print "moving angavg, correlation, and pattern from " + str(currentlyExamining) + " to " + str(storeFlag)
+							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
+							os.system("mv " + diffractionName + " " + write_anomaly_dir_types[storeFlag])
+							os.system("mv " + correlationName + " " + write_anomaly_dir_types[storeFlag])
+						else:
+							print "moving angavg and pattern from " + str(currentlyExamining) + " to " + str(storeFlag)
+							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
+							os.system("mv " + diffractionName + " " + write_anomaly_dir_types[storeFlag])
 					elif(storeFlag == 0):
-						print "moving angavg from " + str(currentlyExamining) + " to " + str(storeFlag) + " , deleting pattern"
-						os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
-						os.system("rm " + diffractionName)
-					
+						if (os.path.exists(correlationName):
+							print "moving angavg and correlation from " + str(currentlyExamining) + " to " + str(storeFlag) + " , deleting pattern"
+							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
+							os.system("mv " + correlationName + " " + write_anomaly_dir_types[storeFlag])
+							os.system("rm " + diffractionName)
+						else:
+							print "moving angavg from " + str(currentlyExamining) + " to " + str(storeFlag) + " , deleting pattern"
+							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
+							os.system("rm " + diffractionName)						
+			
 			waveLengths[storeFlag].append(currWavelengthInAngs)
 			avgArr[storeFlag] += d
 			avgRadAvg[storeFlag] += davg
