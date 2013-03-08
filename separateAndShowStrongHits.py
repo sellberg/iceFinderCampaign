@@ -28,14 +28,14 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="
 # ensure you have the necessary read/write permissions.
 ########################################################
 # SCRATCH
-#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 # RES
-#source_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
-#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
 # FTC
-source_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'
@@ -129,6 +129,9 @@ colmin=0
 class img_class (object):
 	def __init__(self, inarr, inangavg , filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs):
 		self.inarr = inarr*(inarr>0)
+		#invert X-axis for cxi74613
+		for i in range(len(inarr)):
+			self.inarr[i] = self.inarr[i][::-1]
 		self.filename = filename
 		self.inangavg = inangavg
 		self.HIceQ ={}
@@ -253,8 +256,8 @@ waveLengths=[]
 if (options.weakHitsTreatment == 1 and len(weakFiles) > 0):
 	print "averaging weak hits..."
 	arr  = []
-	avg = N.zeros(1233) #cxi25410
-	#avg = N.zeros(1191) #cxi74613
+	#avg = N.zeros(1233) #cxi25410
+	avg = N.zeros(1191) #cxi74613
 	fcounter = 0
 	for fname in weakFiles:
 		diffractionName = source_dir+runtag+"/"+re.sub("-angavg",'',fname)
@@ -292,8 +295,8 @@ waveLengths=[]
 if(options.strongHitsTreatment == 1 and len(strongFiles) > 0):
 	print "averaging strong hits"
 	arr  = []
-	avg = N.zeros(1233) #cxi25410
-	#avg = N.zeros(1191) #cxi74613
+	#avg = N.zeros(1233) #cxi25410
+	avg = N.zeros(1191) #cxi74613
 	fcounter = 0
 	numStrongFiles = len(strongFiles)
 	numPresentStrongFiles = 0

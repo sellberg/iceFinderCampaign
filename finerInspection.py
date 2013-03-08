@@ -29,14 +29,14 @@ parser.add_option("-U", "--upperBoundType2", action="store", type="int", dest="u
 # ensure you have the necessary read/write permissions.
 ########################################################
 # SCRATCH
-#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 # RES
-#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
-#ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+#source_dir = "/reg/data/ana12/cxi/cxi74613/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/data/ana12/cxi/cxi74613/res/cleaned_hdf5/"
 # FTC
-source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
-ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+#source_dir = "/reg/data/ana12/cxi/cxi74613/ftc/cleaned_hdf5/"
+#ang_avg_dir = "/reg/data/ana12/cxi/cxi74613/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/' 
@@ -115,6 +115,9 @@ storeFlag = 0
 class img_class (object):
 	def __init__(self, inarr, inangavg , filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(runtag)):
 		self.inarr = inarr*(inarr>0)
+		#invert X-axis for cxi74613
+		for i in range(len(inarr)):
+			self.inarr[i] = self.inarr[i][::-1]
 		self.filename = filename
 		self.inangavg = inangavg
 		self.wavelength = meanWaveLengthInAngs
@@ -313,10 +316,10 @@ cutoff = int(input("ice/water cutoff? "))
 # Loop to display all non-anomalous H5 files. 
 ########################################################
 
-avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
-avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
-#avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
-#avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
+#avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
+#avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
+avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
+avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
 typeOccurences = N.zeros(numTypes+1)
 waveLengths={}
 for i in range(numTypes):

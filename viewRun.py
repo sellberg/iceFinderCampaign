@@ -27,14 +27,14 @@ parser.add_option("-C", "--cutoffFluctuation", action="store", type="float", des
 # ensure you have the necessary read/write permissions.
 ########################################################
 # SCRATCH
-#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-#ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 # RES
-#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
-#ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
 # FTC
-source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
-ang_avg_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/' 
@@ -104,6 +104,9 @@ class img_class (object):
 	def __init__(self, inarr, inangavg , filename, currTag, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(runtag)):
 		self.origarr = inarr.copy()
 		self.inarr = inarr*(inarr>0)
+		#invert X-axis for cxi74613
+		for i in range(len(inarr)):
+			self.inarr[i] = self.inarr[i][::-1]
 		self.filename = filename
 		self.inangavg = inangavg
 		self.wavelength = meanWaveLengthInAngs
@@ -304,16 +307,16 @@ class img_class (object):
 		P.show() 
 
 
-avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
-avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
-#avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
-#avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
+#avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
+#avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
+avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
+avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
 typeOccurences = N.zeros(numTypes+1)
 
-avgTotArr = N.zeros((1760,1760)) #cxi25410
-avgTotSqArr = N.zeros((1760,1760)) #cxi25410
-#avgTotArr = N.zeros((1764,1764)) #cxi74613
-#avgTotSqArr = N.zeros((1764,1764)) #cxi74613
+#avgTotArr = N.zeros((1760,1760)) #cxi25410
+#avgTotSqArr = N.zeros((1760,1760)) #cxi25410
+avgTotArr = N.zeros((1764,1764)) #cxi74613
+avgTotSqArr = N.zeros((1764,1764)) #cxi74613
 totCounter = 0
 
 waveLengths={}
