@@ -32,11 +32,11 @@ parser.add_option("-U", "--upperBoundType2", action="store", type="int", dest="u
 source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 # RES
-#source_dir = "/reg/data/ana12/cxi/cxi74613/res/cleaned_hdf5/"
-#ang_avg_dir = "/reg/data/ana12/cxi/cxi74613/res/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi/cxi74613/res/cleaned_hdf5/"
 # FTC
-#source_dir = "/reg/data/ana12/cxi/cxi74613/ftc/cleaned_hdf5/"
-#ang_avg_dir = "/reg/data/ana12/cxi/cxi74613/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/' 
