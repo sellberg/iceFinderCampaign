@@ -129,7 +129,7 @@ colmin=0
 class img_class (object):
 	def __init__(self, inarr, inangavg , filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs):
 		self.inarr = inarr*(inarr>0)
-		#invert X-axis for cxi74613
+		#cxi74613: invert X-axis to follow CXI-convention
 		for i in range(len(inarr)):
 			self.inarr[i] = self.inarr[i][::-1]
 		self.filename = filename

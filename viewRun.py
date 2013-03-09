@@ -104,7 +104,7 @@ class img_class (object):
 	def __init__(self, inarr, inangavg , filename, currTag, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(runtag)):
 		self.origarr = inarr.copy()
 		self.inarr = inarr*(inarr>0)
-		#invert X-axis for cxi74613
+		#cxi74613: invert X-axis to follow CXI-convention
 		for i in range(len(inarr)):
 			self.inarr[i] = self.inarr[i][::-1]
 		self.filename = filename
@@ -285,26 +285,6 @@ class img_class (object):
 		canvas.hist(nonzeroarr, bins=N.arange(0,2000,10),log=True)
 		
 		P.show()
-	
-	def draw_spectrum(self):
-		print "Press 'p' to save PNG to correct type folder."
-		global colmax
-		global colmin
-		localColMax=self.inarr.max()
-		localColMin=self.inarr.min()
-		aspectratio = 1.5*(self.inarr.shape[1])/(float(self.inarr.shape[0]))
-		fig = P.figure(num=None, figsize=(13, 10), dpi=100, facecolor='w', edgecolor='k')
-		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_viewing) 
-		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
-		canvas = fig.add_axes([0.05,0.05,0.6,0.9], xlabel="q", ylabel="normalized angular average (will prompt to examine data larger than cutoff)")
-		canvas.set_title(self.filename)
-		self.axes = P.imshow(self.inarr, origin='lower', aspect=aspectratio, vmax = localColMax, vmin = localColMin)
-		self.colbar = P.colorbar(self.axes, pad=0.01)
-		self.orglims = self.axes.get_clim() 
-		canvas2 = fig.add_axes([0.7,0.05,0.25,0.9], xlabel="log(sorting score)", ylabel="data")
-		canvas2.set_ylim([0,numData])
-		canvas2.plot(N.log(N.array(scoreKeeper)[ordering]),range(numData))
-		P.show() 
 
 
 #avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410

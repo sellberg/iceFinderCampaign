@@ -7,8 +7,11 @@ import os
 import re
 from optparse import OptionParser
 
-csvFileName="CXI25410.csv"
-pixSize=110.E-6
+# MUST SAVE CSV FILE DIRECTLY FROM GOOGLE DOCS, MICROSOFT WORD WILL NOT SAVE FILE IN PROPER FORMAT
+#csvFileName="CXI25410.csv"
+#pixSize=110.E-6
+csvFileName="CXI74613.csv"
+pixSize=109.92E-6
 nominalWavelengthInAngs=1.318
 f = open(csvFileName, 'r')
 lines = f.readlines()
@@ -19,7 +22,7 @@ expDescriptors = {}
 runDescriptor="RUN"
 detectorDistDescriptor="SAMPLE-DETECTOR Z (mm)"
 
-iceHInvAngQ={'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324}
+iceHInvAngQ={'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324, '004':3.417}
 
 for i in values:
 	temp_dict = {}

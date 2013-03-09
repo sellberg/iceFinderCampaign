@@ -115,7 +115,7 @@ storeFlag = 0
 class img_class (object):
 	def __init__(self, inarr, inangavg , filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(runtag)):
 		self.inarr = inarr*(inarr>0)
-		#invert X-axis for cxi74613
+		#cxi74613: invert X-axis to follow CXI-convention
 		for i in range(len(inarr)):
 			self.inarr[i] = self.inarr[i][::-1]
 		self.filename = filename
@@ -246,8 +246,8 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 2000, vmin = 0)
+		#self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		self.axes = P.imshow(self.inarr, origin='lower', vmax = options.maxIntens, vmin = 0)
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
@@ -285,6 +285,9 @@ class img_class (object):
 		print "Press 'p' to save PNG."
 		global colmax
 		global colmin
+		#cxi74613: restore X-axis for spectrum
+		for i in range(len(self.inarr)):
+			self.inarr[i] = self.inarr[i][::-1]
 		localColMax=self.inarr.max()
 		localColMin=self.inarr.min()
 		aspectratio = 1.5*(self.inarr.shape[1])/(float(self.inarr.shape[0]))
@@ -316,6 +319,8 @@ cutoff = int(input("ice/water cutoff? "))
 # Loop to display all non-anomalous H5 files. 
 ########################################################
 
+colmax = options.maxIntens
+colmin = 0
 #avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
 #avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
 avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
