@@ -74,9 +74,9 @@ HIceP = {'100':9.5, '002':8.5, '101':7.5, '102':6.2, '110':5.7, '103':5.2, '200'
 #source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
 #sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
 # RES & FTC
-source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
-#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
-sorting_dir = "/reg/data/ana12/cxi/cxi25410/res/iceFinderCampaign/"
+source_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
+sorting_dir = "/reg/d/psdm/cxi/cxi25410/res/iceFinderCampaign/"
 
 original_dir = os.getcwd() + '/'
 run_tag = "r0144"
@@ -675,23 +675,23 @@ for i in N.arange(len(runs)):
 					excludedTemp_ice_correlation[j] *= excludenice/excludesumice
 	
 	water_angavg.append(N.array(temp_water_angavg).sum(axis=0))
-	water_angavgQ.append(N.array(temp_water_angavgQ).sum(axis=0)/len(runs[i]))
+	water_angavgQ.append(N.array(temp_water_angavgQ).mean(axis=0))
 	water_pattern.append(N.array(temp_water_pattern).sum(axis=0))
 	if options.xaca:
 		water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
 	ice_angavg.append(N.array(temp_ice_angavg).sum(axis=0))
-	ice_angavgQ.append(N.array(temp_ice_angavgQ).sum(axis=0)/len(runs[i]))
+	ice_angavgQ.append(N.array(temp_ice_angavgQ).mean(axis=0))
 	ice_pattern.append(N.array(temp_ice_pattern).sum(axis=0))
 	if options.xaca:
 		ice_correlation.append(N.array(temp_ice_correlation).sum(axis=0))	
 	if (options.exclude and options.saveExcluded):
 		excludedWater_angavg.append(N.array(excludedTemp_water_angavg).sum(axis=0))
-		excludedWater_angavgQ.append(N.array(excludedTemp_water_angavgQ).sum(axis=0)/len(runs[i]))
+		excludedWater_angavgQ.append(N.array(excludedTemp_water_angavgQ).mean(axis=0))
 		excludedWater_pattern.append(N.array(excludedTemp_water_pattern).sum(axis=0))
 		if options.xaca:
 			excludedWater_correlation.append(N.array(excludedTemp_water_correlation).sum(axis=0))
 		excludedIce_angavg.append(N.array(excludedTemp_ice_angavg).sum(axis=0))
-		excludedIce_angavgQ.append(N.array(excludedTemp_ice_angavgQ).sum(axis=0)/len(runs[i]))
+		excludedIce_angavgQ.append(N.array(excludedTemp_ice_angavgQ).mean(axis=0))
 		excludedIce_pattern.append(N.array(excludedTemp_ice_pattern).sum(axis=0))
 		if options.xaca:
 			excludedIce_correlation.append(N.array(excludedTemp_ice_correlation).sum(axis=0))	
@@ -936,4 +936,3 @@ for i in N.arange(len(runs)):
 			entry_8.create_dataset("deltaQ", data=excludedWater_fitdeltaq[i])
 f.close()
 print "Successfully updated %s" % hdf5tag
-	

@@ -349,7 +349,7 @@ for currentlyExamining in range(numTypes+1):
 					diffractionName = write_anomaly_dir_types[currentlyExamining]+"/"+re.sub("-angavg",'',fname)
 					correlationName = write_anomaly_dir_types[currentlyExamining]+"/"+re.sub("-angavg","-xaca",fname)
 					if(storeFlag != 0):
-						if (os.path.exists(correlationName):
+						if (os.path.exists(correlationName)):
 							print "moving angavg, correlation, and pattern from " + str(currentlyExamining) + " to " + str(storeFlag)
 							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
 							os.system("mv " + diffractionName + " " + write_anomaly_dir_types[storeFlag])
@@ -359,7 +359,7 @@ for currentlyExamining in range(numTypes+1):
 							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
 							os.system("mv " + diffractionName + " " + write_anomaly_dir_types[storeFlag])
 					elif(storeFlag == 0):
-						if (os.path.exists(correlationName):
+						if (os.path.exists(correlationName)):
 							print "moving angavg and correlation from " + str(currentlyExamining) + " to " + str(storeFlag) + " , deleting pattern"
 							os.system("mv " + angAvgName + " " + write_anomaly_dir_types[storeFlag])
 							os.system("mv " + correlationName + " " + write_anomaly_dir_types[storeFlag])
