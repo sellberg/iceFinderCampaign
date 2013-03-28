@@ -65,9 +65,9 @@ HIceP = {'100':9.5, '002':8.5, '101':7.5, '102':6.2, '110':5.7, '103':5.2, '200'
 #source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
 #sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
 # RES & FTC
-source_dir = "/reg/data/ana12/cxi/cxi25410/ftc/cleaned_hdf5/"
-#source_dir = "/reg/data/ana12/cxi/cxi25410/res/cleaned_hdf5/"
-sorting_dir = "/reg/data/ana12/cxi/cxi25410/res/iceFinderCampaign/"
+source_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
+sorting_dir = "/reg/d/psdm/cxi/cxi25410/res/iceFinderCampaign/"
 
 original_dir = os.getcwd() + '/'
 run_tag = "r0144"

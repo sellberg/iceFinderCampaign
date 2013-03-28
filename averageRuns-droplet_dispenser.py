@@ -49,17 +49,15 @@ nhits_water = [[2610],[7860],[3900],[377,3100],[3000],[2280],[1225,1480],[1880],
 # hits with damged Q-calibration (THESE ARE NOW INCLUDED WITH THE NEW CORRECTIONS)
 dhits_water = [[0],[83],[21],[0,4],[22],[6],[11,0],[0],[0]]
 # hits with failed peak fitting (2013-03-27, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-failedFits20_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[0],[0]]
+failedFits20_water = [[155],[0],[1],[0,0],[0],[0],[0,0],[0],[0]]
 # thresholded hits below 50 ADUs
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
 t50hits_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[0],[0]]
-# hits with failed peak fitting (2013-03-27, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-failedFits50_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[0],[0]]
+failedFits50_water = [[155],[0],[1],[0,0],[0],[0],[0,0],[0],[0]]
 # thresholded hits below 100 ADUs
 runs = [[105],[111],[68],[63,64],[110],[73],[77,79],[88],[97]]
 t100hits_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[1453],[1020]]
-# hits with failed peak fitting (2013-03-27, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-failedFits100_water = [[0],[0],[0],[0,0],[0],[0],[0,0],[0],[0]]
+failedFits100_water = [[155],[0],[1],[0,0],[0],[0],[0,0],[0],[0]]
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [290,260,254,249,244,243,240,235,233]
@@ -412,6 +410,12 @@ for i in N.arange(len(runs)):
 	water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
 	if options.xaca:
 		water_correlation.append(N.array(temp_water_correlation).sum(axis=0))
+	if (options.exclude and options.saveExcluded):
+		excludedWater_angavg.append(N.array(excludedTemp_water_angavg).sum(axis=0))
+		excludedWater_angavgQ.append(N.array(excludedTemp_water_angavgQ).mean(axis=0))
+		excludedWater_pattern.append(N.array(excludedTemp_water_pattern).sum(axis=0))
+		if options.xaca:
+			excludedWater_correlation.append(N.array(excludedTemp_water_correlation).sum(axis=0))
 	
 	currImg = img_class(water_pattern[i], water_angavg[i], [int(sumwater), temperatures[i]], "output_runs-T%sK-%dADUs-pattern"%(temperatures[i],options.threshold))
 	currImg.draw_img_for_viewing_pattern()
@@ -443,13 +447,22 @@ for i in N.arange(len(runs)):
 			excludedTemp_water_fitpos2 = N.array([shot for run in excludedTemp_water_fitpos2 for shot in run])
 			excludedTemp_water_fitfwhm2 = N.array([shot for run in excludedTemp_water_fitfwhm2 for shot in run])
 			excludedTemp_water_fitdeltaq = excludedTemp_water_fitpos2 - excludedTemp_water_fitpos1
-			excludedWater_fitint1.append(excludedTemp_water_fitint1)
-			excludedWater_fitpos1.append(excludedTemp_water_fitpos1)
-			excludedWater_fitfwhm1.append(excludedTemp_water_fitfwhm1)
-			excludedWater_fitint2.append(excludedTemp_water_fitint2)
-			excludedWater_fitpos2.append(excludedTemp_water_fitpos2)
-			excludedWater_fitfwhm2.append(excludedTemp_water_fitfwhm2)
-			excludedWater_fitdeltaq.append(excludedTemp_water_fitdeltaq)
+			if (len(excludedTemp_water_fitint1) == 0):
+				excludedWater_fitint1.append([0])
+				excludedWater_fitpos1.append([0])
+				excludedWater_fitfwhm1.append([0])
+				excludedWater_fitint2.append([0])
+				excludedWater_fitpos2.append([0])
+				excludedWater_fitfwhm2.append([0])
+				excludedWater_fitdeltaq.append([0])
+			else:
+				excludedWater_fitint1.append(excludedTemp_water_fitint1)
+				excludedWater_fitpos1.append(excludedTemp_water_fitpos1)
+				excludedWater_fitfwhm1.append(excludedTemp_water_fitfwhm1)
+				excludedWater_fitint2.append(excludedTemp_water_fitint2)
+				excludedWater_fitpos2.append(excludedTemp_water_fitpos2)
+				excludedWater_fitfwhm2.append(excludedTemp_water_fitfwhm2)
+				excludedWater_fitdeltaq.append(excludedTemp_water_fitdeltaq)
 		
 		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
 		index = N.array([((water_angavgQ[i] > options.S1_min)[j] and (water_angavgQ[i] < options.S1_max)[j]) or ((water_angavgQ[i] > options.S2_min)[j] and (water_angavgQ[i] < options.S2_max)[j]) for j in range(len(water_angavgQ[i]))])

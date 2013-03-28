@@ -726,13 +726,22 @@ for i in N.arange(len(runs)):
 			excludedTemp_water_fitpos2 = N.array([shot for run in excludedTemp_water_fitpos2 for shot in run])
 			excludedTemp_water_fitfwhm2 = N.array([shot for run in excludedTemp_water_fitfwhm2 for shot in run])
 			excludedTemp_water_fitdeltaq = excludedTemp_water_fitpos2 - excludedTemp_water_fitpos1
-			excludedWater_fitint1.append(excludedTemp_water_fitint1)
-			excludedWater_fitpos1.append(excludedTemp_water_fitpos1)
-			excludedWater_fitfwhm1.append(excludedTemp_water_fitfwhm1)
-			excludedWater_fitint2.append(excludedTemp_water_fitint2)
-			excludedWater_fitpos2.append(excludedTemp_water_fitpos2)
-			excludedWater_fitfwhm2.append(excludedTemp_water_fitfwhm2)
-			excludedWater_fitdeltaq.append(excludedTemp_water_fitdeltaq)
+			if (len(excludedTemp_water_fitint1) == 0):
+				excludedWater_fitint1.append([0])
+				excludedWater_fitpos1.append([0])
+				excludedWater_fitfwhm1.append([0])
+				excludedWater_fitint2.append([0])
+				excludedWater_fitpos2.append([0])
+				excludedWater_fitfwhm2.append([0])
+				excludedWater_fitdeltaq.append([0])
+			else:
+				excludedWater_fitint1.append(excludedTemp_water_fitint1)
+				excludedWater_fitpos1.append(excludedTemp_water_fitpos1)
+				excludedWater_fitfwhm1.append(excludedTemp_water_fitfwhm1)
+				excludedWater_fitint2.append(excludedTemp_water_fitint2)
+				excludedWater_fitpos2.append(excludedTemp_water_fitpos2)
+				excludedWater_fitfwhm2.append(excludedTemp_water_fitfwhm2)
+				excludedWater_fitdeltaq.append(excludedTemp_water_fitdeltaq)
 		
 		p0 = [2.2E8, 1.83, 0.25, 1.7E8, 2.98, 0.2]
 		index = N.array([((water_angavgQ[i] > options.S1_min)[j] and (water_angavgQ[i] < options.S1_max)[j]) or ((water_angavgQ[i] > options.S2_min)[j] and (water_angavgQ[i] < options.S2_max)[j]) for j in range(len(water_angavgQ[i]))])
