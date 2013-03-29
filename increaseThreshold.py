@@ -22,9 +22,22 @@ parser.add_option("-o", "--outputdir", action="store", type="string", dest="outp
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="prints out the frame number as it is processed", default=False)
 (options, args) = parser.parse_args()
 
-#Tagging directories with the correct names
-source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
+########################################################
+# Edit this variable accordingly
+# Files are read for source_dir/runtag and
+# written to write_dir/runtag.
+# Be careful of the trailing "/"; 
+# ensure you have the necessary read/write permissions.
+########################################################
+# SCRATCH
+source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+# RES
+#source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi/cxi74613/res/cleaned_hdf5/"
+# FTC
+#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'
@@ -125,7 +138,7 @@ class img_class (object):
 			P.draw()
 		
 	def draw_img_for_viewing(self):
-		print "Press 'p' to save PNG."
+		#print "Press 'p' to save PNG."
 		global colmax
 		global colmin
 		for i,j in eDD.iceHInvAngQ.iteritems():
@@ -161,7 +174,11 @@ class img_class (object):
 
 		P.plot(self.inangavg)
 
-		P.show()
+		pngtag = foundTypes[storeFlag] + '/' + "%s.png" % (self.filename)
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		P.close()
+		#P.show()
 	
 	def draw_img_for_thresholding(self):
 		global colmax
@@ -212,13 +229,17 @@ class img_class (object):
 # Loop to display and auto-threshold all H5 files
 ########################################################
 
-avgArr = N.zeros((numTypes,1760,1760))
 avgRawArr = N.zeros((numTypes,1480,1552))
-avgRadAvg = N.zeros((numTypes,1233))
+#avgArr = N.zeros((numTypes+1,1760,1760)) #cxi25410
+#avgRadAvg = N.zeros((numTypes+1,1233)) #cxi25410
+avgArr = N.zeros((numTypes+1,1764,1764)) #cxi74613
+avgRadAvg = N.zeros((numTypes+1,1191)) #cxi74613
 typeOccurences = N.zeros(numTypes)
-threshArr = N.zeros((numTypes,1760,1760))
 threshRawArr = N.zeros((numTypes,1480,1552))
-threshRadAvg = N.zeros((numTypes,1233))
+#threshArr = N.zeros((numTypes,1760,1760)) #cxi25410
+#threshRadAvg = N.zeros((numTypes,1233)) #cxi25410
+threshArr = N.zeros((numTypes,1764,1764)) #cxi74613
+threshRadAvg = N.zeros((numTypes,1191)) #cxi74613
 threshOccurences = N.zeros(numTypes)
 wavelengths = [[] for i in foundTypeNumbers]
 
@@ -292,11 +313,11 @@ for currentlyExamining in range(numTypes):
 			print "max-min wavelength = " + str(N.max(wavelengths[currentlyExamining]) - N.min(wavelengths[currentlyExamining])) + " A."
 
 
-print "Right-click on colorbar to set maximum scale."
-print "Left-click on colorbar to set minimum scale."
-print "Center-click on colorbar (or press 'r') to reset color scale."
-print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
-print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
+#print "Right-click on colorbar to set maximum scale."
+#print "Left-click on colorbar to set minimum scale."
+#print "Center-click on colorbar (or press 'r') to reset color scale."
+#print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
+#print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
 
 storeFlag = 0
 

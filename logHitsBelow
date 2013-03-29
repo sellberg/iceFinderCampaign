@@ -1,22 +1,49 @@
 #!/bin/bash
-# make lists of hits below 50 and 100 ADUs and copies angular averages back to original folder
+# make hit lists for type0 and type1 below 50 and 100 ADUs that can be used as input to exclude option in:
+# splineAndFitStrongHits.py
+# this is the same functionality as makeThresholdLists except it copies the angular averages and moves the scattering patterns back (type1 only)
 # takes 1 input: <RUN_DIR>
 
 if [ $# -eq 1 ]
 then
-    cd $1/below50ADUs/
-    ls LCLS*angavg.h5 > ../below50ADUs.txt
-    echo "created $1below50ADUs.txt"
-    cp LCLS*angavg.h5 ../.
-    cd ../below100ADUs/
-    ls LCLS*angavg.h5 > ../below100above50ADUs.txt
-    echo "created $1below100above50ADUs.txt"
-    ls LCLS*angavg.h5 > ../below100ADUs.txt
-    cp LCLS*angavg.h5 ../.
-    cd ../
-    more below50ADUs.txt >> below100ADUs.txt
-    echo "created $1below100ADUs.txt"
+    if [ -d $1/below100ADUs/ ]; then
+	cd $1/below100ADUs/
+	ls LCLS*angavg.h5 > ../below100above50ADUs.txt
+	echo "created $1below100above50ADUs.txt"
+	ls LCLS*angavg.h5 > ../below100ADUs.txt
+	echo "created $1below100ADUs.txt"
+	cp LCLS*angavg.h5 ../.
+	cd ../../
+    fi
+    if [ -d $1/below50ADUs/ ]; then
+	cd $1/below50ADUs/
+	ls LCLS*angavg.h5 > ../below50ADUs.txt
+	echo "created $1below50ADUs.txt"
+	cp LCLS*angavg.h5 ../.
+	cd ../
+	more below50ADUs.txt >> below100ADUs.txt
+	cd ../
+    fi
+    if [ -d $1/type1/below100ADUs/ ]; then
+	cd $1/type1/below100ADUs/
+	ls LCLS*angavg.h5 > ../below100above50ADUs.txt
+	echo "created $1type1/below100above50ADUs.txt"
+	ls LCLS*angavg.h5 > ../below100ADUs.txt
+	echo "created $1type1/below100ADUs.txt"
+	cp LCLS*angavg.h5 ../.
+	mv LCLS*cspad.h5 ../.
+	cd ../../../
+    fi
+    if [ -d $1/type1/below50ADUs/ ]; then
+	cd $1/type1/below50ADUs/
+	ls LCLS*angavg.h5 > ../below50ADUs.txt
+	echo "created $1type1/below50ADUs.txt"
+	cp LCLS*angavg.h5 ../.
+	mv LCLS*cspad.h5 ../.
+	cd ../
+	more below50ADUs.txt >> below100ADUs.txt
+	cd ../
+    fi
 else
-    echo to log hits below threshold: ./logHitsBelow output_rXXXX/
+    echo to log  hits below threshold: ./logHitsBelow output_rXXXX/
 fi
-
