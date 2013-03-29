@@ -577,11 +577,11 @@ for dirName in foundTypes:
 			P.close()
 		
 		if (options.exclude and options.saveExcluded and excludedTypeOccurences[storeFlag] > 0.):
-			excludedAvgArr[storeFlag] /= typeOccurences[storeFlag]
-			excludedAvgRawArr[storeFlag] /= typeOccurences[storeFlag]
-			excludedAvgAngAvg[storeFlag] /= typeOccurences[storeFlag]		
+			excludedAvgArr[storeFlag] /= excludedTypeOccurences[storeFlag]
+			excludedAvgRawArr[storeFlag] /= excludedTypeOccurences[storeFlag]
+			excludedAvgAngAvg[storeFlag] /= excludedTypeOccurences[storeFlag]		
 			if options.xaca:
-				excludedAvgCorrArr[storeFlag] /= typeOccurences[storeFlag]		
+				excludedAvgCorrArr[storeFlag] /= excludedTypeOccurences[storeFlag]		
 			currImg = img_class(excludedAvgArr[storeFlag], excludedAvgAngAvg[storeFlag], avgAngAvgQ, excludedTypeTag, meanWaveLengthInAngs=N.mean(excludedWavelengths[storeFlag]))
 			currImg.draw_img_for_viewing()
 		
