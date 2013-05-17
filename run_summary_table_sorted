@@ -1,0 +1,428 @@
+#!/bin/bash
+scriptname="${0##*/}"
+usagestring="Usage: $scriptname [ -a | -u | -i sec | -r rangelow rangehigh | -v | -h ] [runnumbers]"
+
+#DEFAULT OPTIONS, override by passed arguments
+UPDATE=0
+RUN_ALL=0
+RUN_RANGE=0
+RUN_LOW=200
+RUN_HIGH=201
+RUN_ARRAY_LENGTH=0
+INFINITE_LOOP=0
+INFINITE_LOOP_SLEEP=0
+VERBOSE=0
+SUMMARY_FILENAME_EXTEND=""
+#not yet implemented
+XTC_HIGHEST=1
+FILL_EMPTY_RUNS=1
+
+
+#CONSTANTS
+LCLSEXP="cxi74613"
+LCLSEXP_DIR="/reg/d/psdm/cxi/$LCLSEXP"
+HDF5_DIR="$LCLSEXP_DIR/scratch/cleaned_hdf5"
+XTC_DIR="$LCLSEXP_DIR/xtc"
+SUMMARY_DIR="$HDF5_DIR/summary"
+SORTING_DIR="$LCLSEXP_DIR/res/iceFinderCampaign"
+EMPTY_FILE="$SUMMARY_DIR/empty_file"
+
+eval set -- $(getopt -n $0 -o "-aurvshi:" -- "$@")
+
+declare a u i s r v h
+declare -a runs
+declare -a RUN_ARRAY
+while [ $# -gt 0 ] ; do
+        case "$1" in
+                -a) a=1 ; shift ;;
+                -u) u=1 ; shift ;;
+                -i) i=1 ; shift  ; INFINITE_LOOP_SLEEP=$1; shift ;;
+                -s) s=1 ; shift  ; SUMMARY_FILENAME_EXTEND=$1; shift ;;
+                -r) r=1 ; shift ;;
+                -v) v=1 ; shift ;;
+		-h) shift; #cat <<EOF 
+		echo "$usagestring";
+		echo "-a: Check all jobs based on the avaliable XTC files"
+		echo "-u: Update only, do not re-check if summary file is newer than log.txt in cheetah dir"
+		echo "-r: Check jobs within a range, takes two int arg as low and high in range"
+		echo "-i: Run an infinite loop. Takes seconds sleep time as argument"
+		echo "-s: Extend the summary filenames(s) with string argument "
+		exit 1 ;;
+                --) shift ;;
+                -*) echo "bad option '$1'" ; echo "$usagestring" 1>&2; exit 1 ;;
+                *) runs=("${runs[@]}" "$1") ; shift ;;
+		esac
+done
+
+if [ ! -z "$i" ] ; then
+    echo "run infinite loop with sleep seconds $INFINITE_LOOP_SLEEP"
+    INFINITE_LOOP=1
+fi
+if [ ! -z "$u" ] ; then
+    echo "update only runs with log.txt newer than current summary txt file"
+    UPDATE=1
+fi
+if [ ! -z "$v" ] ; then
+    VERBOSE=1
+    echo "verbose output"
+fi
+if [ ! -z "$a" ] ; then
+    echo "check all jobs, ignore range argument"
+    RUN_ALL=1
+    RUN_RANGE=1
+    RUN_LOW=1
+    XTC_HIGHEST=`/bin/ls ../../xtc/*-s00-c00.xtc | tail -n 1 | sed 's/^.*-r//' | sed 's/-.*$//' | sed 's/^0*//'`
+    RUN_HIGH=$((XTC_HIGHEST+0))
+fi
+if [ ! -z "$r" ] ; then
+    echo "define run range with the following arguments ${runs[@]}"
+    if [ ! ${#runs[@]} -eq 2 ] ; then
+		echo "bad number of run number arguments: ${#runs[@]}" ; 
+		exit 1;
+    fi
+    RUN_RANGE=1
+    RUN_LOW=${runs[0]}
+    RUN_HIGH=${runs[1]}
+fi
+
+if [ $RUN_RANGE -eq 1 ]; then
+    if [ ! $RUN_LOW  -ge 1 ]; then
+	echo "bad low  range value ($RUN_LOW). Needs to be btw 1 and 9999"; 
+	exit 1;
+    fi
+    if [ ! $RUN_HIGH -ge 1    ]; then
+	echo "bad high range value ($RUN_HIGH). Needs to be btw 1 and 9999"; 
+	exit 1;
+    fi
+    if [ ! $RUN_LOW  -le 9999 ]; then
+	echo "bad low  range value ($RUN_LOW). Needs to be btw 1 and 9999"; 
+	exit 1;
+    fi
+    if [ ! $RUN_HIGH -le 9999 ]; then
+	echo "bad high range value ($RUN_HIGH). Needs to be btw 1 and 9999"; 
+	exit 1;
+    fi
+    if [ ! $RUN_LOW -le $RUN_HIGH ]; then
+	echo "low range value ($RUN_LOW) bigger than high range value($RUN_HIGH). exit "; 
+	exit 1;
+    fi
+    RUN_ARRAY=();
+    for (( i=$RUN_LOW; i<=RUN_HIGH ; i++ )); do
+	RUN_ARRAY=("${RUN_ARRAY[@]}" "$i") 
+    done
+fi
+
+if [ ! $RUN_RANGE -eq 1 ]; then
+    if [ ${#runs} -eq 0 ] ; then
+		echo "No run numbers where passed to function. To run all use -a. Exit"
+		exit 1
+    fi
+    RUN_ARRAY=()
+    RUN_LOW=9999
+    RUN_HIGH=1
+    for (( i=0; i<${#runs[@]} ; i++ )); do
+		if [ ! ${runs[i]} -ge 1 -o ! ${runs[i]} -le 9999  ]; then
+		    echo "run number ${runs[i]} not in 1-9999 allowed range"; 
+		    exit 1;
+		fi
+		[ ${runs[i]} -lt $RUN_LOW  ] && RUN_LOW=${runs[i]};
+		[ ${runs[i]} -gt $RUN_HIGH ] && RUN_HIGH=${runs[i]};
+		RUN_ARRAY=("${RUN_ARRAY[@]}" "${runs[i]}")
+    done
+fi
+
+if [ ${#RUN_ARRAY} -eq 0 ] ; then
+        echo "RUN_ARRAY is not defined. exit"
+        exit 1
+fi
+RUN_ARRAY_LENGTH=${#RUN_ARRAY[@]}
+
+if [ $RUN_ARRAY_LENGTH -gt 100 ]; then 
+    if [ ! $UPDATE -eq 1 ]; then 
+	echo "Warning. RUN_ARRAY has $RUN_ARRAY_LENGTH runs. Consider subrange or update (-u)"
+    fi
+fi
+if [ $RUN_ARRAY_LENGTH -le 0 ]; then 
+    echo "RUN_ARRAY_LENGTH ($RUN_ARRAY_LENGTH) is 0 or smaller. Exit."; 
+    exit 1
+fi
+
+RUN_HIGH_STRING=`printf "r%04d\n" $RUN_HIGH`
+RUN_LOW_STRING=`printf "r%04d\n" $RUN_LOW`
+
+SUMMARY_FILENAME_EXTEND_LENGTH=`echo $SUMMARY_FILENAME_EXTEND | wc -w`
+if [ $SUMMARY_FILENAME_EXTEND_LENGTH -eq 0 ]; then
+    SUMMARY_TXT_FILE="${SUMMARY_DIR}/${RUN_LOW_STRING}_${RUN_HIGH_STRING}_summary.txt"
+    SUMMARY_CSV_FILE="${SUMMARY_DIR}/${RUN_LOW_STRING}_${RUN_HIGH_STRING}_summary.csv"
+    SUMMARY_LATEST_CSV="${SUMMARY_DIR}/latest_summary.csv"
+    SUMMARY_PREVIOUS_CSV="${SUMMARY_DIR}/previous_summary.csv"
+else
+    SUMMARY_TXT_FILE="${SUMMARY_DIR}/${RUN_LOW_STRING}_${RUN_HIGH_STRING}_summary_${SUMMARY_FILENAME_EXTEND}.txt"
+    SUMMARY_CSV_FILE="${SUMMARY_DIR}/${RUN_LOW_STRING}_${RUN_HIGH_STRING}_summary_${SUMMARY_FILENAME_EXTEND}.csv"
+    SUMMARY_LATEST_CSV="${SUMMARY_DIR}/latest_summary_${SUMMARY_FILENAME_EXTEND}.csv"
+    SUMMARY_PREVIOUS_CSV="${SUMMARY_DIR}/previous_summary_${SUMMARY_FILENAME_EXTEND}.csv"
+fi
+
+LOOP=1
+LOOPMAX=2
+
+while [ $LOOP -lt $LOOPMAX ]; do 
+
+    if [ ! -d "$SUMMARY_DIR" ]; then
+	echo "SUMMARY_DIR=$SUMMARY_DIR doesn't exist! exit"
+	exit 1
+    fi
+    
+    if [ ! -d "$SORTING_DIR" ]; then
+	echo "SORTING_DIR=$SORTING_DIR doesn't exist! exit"
+	exit 1
+    fi
+    
+    if [ ! -e "$EMPTY_FILE" ]; then
+	touch $EMPTY_FILE
+	chmod g+rw $EMPTY_FILE
+    fi
+    if [ ! -r "$EMPTY_FILE" ]; then
+	echo "EMPTY_FILE=$EMPTY_FILE exist but is not readable. exit!"
+	exit 1
+    fi
+
+    if [ ! -e "$SUMMARY_TXT_FILE" ]; then
+	touch $SUMMARY_TXT_FILE
+	chmod g+rw $SUMMARY_TXT_FILE
+    fi
+    if [ ! -r "$SUMMARY_TXT_FILE" ]; then
+	echo "SUMMARY_TXT_FILE=$SUMMARY_TXT_FILE exist but is not readable. exit!"
+	exit 1
+    fi
+    
+    if [ ! -e "$SUMMARY_CSV_FILE" ]; then
+	touch $SUMMARY_CSV_FILE
+	chmod g+rw $SUMMARY_CSV_FILE
+    fi
+    if [ ! -r "$SUMMARY_CSV_FILE" ]; then
+	echo "SUMMARY_CSV_FILE=$SUMMARY_CSV_FILE exist but is not readable. exit!"
+	exit 1
+    fi
+    if [   -e "$SUMMARY_LATEST_CSV" ]; then
+	if [ ! -w "$SUMMARY_LATEST_CSV" ]; then
+	    echo "SUMMARY_LATEST_CSV=$SUMMARY_LATEST_CSV exist but is not writable. exit!"
+	    exit 1
+	fi
+	if [ ! -r "$SUMMARY_LATEST_CSV" ]; then
+	    echo "SUMMARY_LATEST_CSV=$SUMMARY_LATEST_CSV exist but is not readable. exit!"
+	    exit 1
+	fi
+    fi
+    if [   -e "$SUMMARY_PREVIOUS_CSV" ]; then
+	if [ ! -w "$SUMMARY_PREVIOUS_CSV" ]; then
+	    echo "SUMMARY_PREVIOUS_CSV=$SUMMARY_PREVIOUS_CSV exist but is not writable. exit!"
+	    exit 1
+	fi
+	if [ ! -r "$SUMMARY_PREVIOUS_CSV" ]; then
+	    echo "SUMMARY_PREVIOUS_CSV=$SUMMARY_PREVIOUS_CSV exist but is not readable. exit!"
+	    exit 1
+	fi
+    fi
+
+    [ $VERBOSE -eq 1 ]   && echo "Pipe csv updates to ${SUMMARY_CSV_FILE}"
+    
+# Put the Headers into the summary csv file before loop
+    awk -v comment="" -f run_summary_table_sorted.awk ${EMPTY_FILE} | sed -n '1 p' > ${SUMMARY_CSV_FILE}
+    [ $VERBOSE -eq 1 ]   && cat ${SUMMARY_CSV_FILE}
+
+#for (( RUNNUM=$RUN_LOW; RUNNUM<=RUN_HIGH ; RUNNUM++ )); do
+    for (( i=0; i<RUN_ARRAY_LENGTH ; i++ )); do
+	RUNNUM=${RUN_ARRAY[$i]}
+	DIR=`printf "r%04d\n" $RUNNUM`; 
+   
+#    echo -n "$DIR :"
+
+	RUN_CHEETAHDIR_EXIST=0
+	RUN_CHEETAHDIR_READ=0
+	RUN_CHEETAHLOG=0
+	RUN_CHEETAHINI=0
+	RUN_LOGFILE=0
+	RUN_FINISHED=0
+	RUN_LOG=""
+	RUN_ERR=0
+
+	[ -d "$DIR" ] && RUN_CHEETAHDIR_EXIST=1
+	[ -r "$DIR" ] && RUN_CHEETAHDIR_READ=1
+	[ -e "$DIR/log.txt" ] && RUN_CHEETAHLOG=1
+	[ -e "$DIR/cheetah.ini" ] && RUN_CHEETAHINI=1
+
+	if [ $RUN_CHEETAHDIR_EXIST -eq 1 -a $RUN_CHEETAHLOG -eq 1 ]; then
+	    if [ $RUN_CHEETAHDIR_READ -eq 0 ]; then
+		RUN_ERR=1
+		RUN_LOG="no read permission on directory!"
+	    fi
+	    if [ $RUN_CHEETAHDIR_READ -eq 1 ]; then
+		RUN_ERR=0
+		RUN_LOG="FILES IN PLACE"
+	    # It defaults to not finnished, we will change below if it has
+	    fi
+	fi
+	if [ $RUN_CHEETAHDIR_EXIST -eq 1 -a $RUN_CHEETAHLOG -eq 0 ]; then
+	    RUN_ERR=1
+	    RUN_LOG="no cheetah log file inside cheetah dir"
+	fi
+    # cheetah .ini file missing overrides cheetah log file missing below
+	if [ $RUN_CHEETAHDIR_EXIST -eq 1 -a $RUN_CHEETAHINI -eq 0 ]; then
+	    RUN_ERR=1
+	    RUN_LOG="no cheetah ini file inside cheetah dir"
+	fi
+	
+	if [ $RUN_CHEETAHDIR_EXIST -eq 0 ]; then
+	    RUN_ERR=1
+	    RUN_LOG="no cheetah dir!"
+	fi
+	
+	if [ $RUN_ERR -eq 0 ]; then
+#	    if [ $UPDATE -eq 1 ]; then
+#	    fi
+	    LASTLINE_GREPDATARATE=`tail -n 1 ${DIR}/log.txt | sed 's/,//' | grep 'Average data rate:'`
+	    LASTLINE_GREPNFRAMES=`tail -n 1 ${DIR}/log.txt | sed 's/,//' | grep 'nFrames:'`
+	    if [ ! -z "${LASTLINE_GREPDATARATE}" ]; then 
+		RUN_FINISHED=1
+		RUN_LOG="DONE"
+	    fi
+	    if [ ! -z "${LASTLINE_GREPNFRAMES}" ]; then 
+		RUN_FINISHED=0
+		RUN_LOG="JOB NOT FINISHED"
+	    fi
+	    
+	    echo "$DIR : $RUN_LOG" > ${SUMMARY_DIR}/${DIR}_summary.txt
+	    grep -e "ADC" -e "hitfinder=" -e "icefinder=" -e "NAT" -e "generateDark" ${DIR}/cheetah.ini | grep -e "hit" -e "ice" -e "Dark" >> ${SUMMARY_DIR}/${DIR}_summary.txt
+	    
+	    if [ ${RUN_FINISHED} -eq 0 ]; then
+		echo "${LASTLINE_GREPNFRAMES}" | awk '{print "Frames processed: "$2;print "Number of hits: "$4;sub(/\(/,"",$5);sub(/%\),/,"",$5);print "Average hit rate: "$5}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		grep -v "#" ${DIR}/${DIR}-icehits.txt | wc -l | awk '{print "nFrames in ice powder pattern: "$1}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
+	    fi
+	    
+	    if [ ${RUN_FINISHED} -eq 1 ]; then
+		tail -n 7 ${DIR}/log.txt >> ${SUMMARY_DIR}/${DIR}_summary.txt
+	    fi
+	    
+	    if [ -d "$SORTING_DIR/output_$DIR" ]; then
+		SORTING_NTYPE0=`ls $SORTING_DIR/output_$DIR/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE0_BELOW50=`ls $SORTING_DIR/output_$DIR/below50ADUs/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE0_BELOW100=`ls $SORTING_DIR/output_$DIR/below100ADUs/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE1=`ls $SORTING_DIR/output_$DIR/type1/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE1_BELOW50=`ls $SORTING_DIR/output_$DIR/type1/below50ADUs/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE1_BELOW100=`ls $SORTING_DIR/output_$DIR/type1/below100ADUs/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE2=`ls $SORTING_DIR/output_$DIR/type2/LCLS*angavg.h5 | wc -l`
+		SORTING_NTYPE3=`ls $SORTING_DIR/output_$DIR/type3/LCLS*angavg.h5 | wc -l`
+		
+		echo "Number of sorted water hits: "$SORTING_NTYPE0 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted water hits below 50 ADUs: "$SORTING_NTYPE0_BELOW50 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted water hits below 100 ADUs: "$SORTING_NTYPE0_BELOW100 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted ice hits: "$SORTING_NTYPE1 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted ice hits below 50 ADUs: "$SORTING_NTYPE1_BELOW50 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted ice hits below 100 ADUs: "$SORTING_NTYPE1_BELOW100 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted weak hits: "$SORTING_NTYPE2 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted out-of-focus hits: "$SORTING_NTYPE3 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+	    fi
+	fi
+	
+	if [ $RUN_ERR -eq 1 ]; then
+	    echo    "$DIR : $RUN_LOG" > ${SUMMARY_DIR}/${DIR}_summary.txt; 
+	fi
+
+	/bin/ls -l --block-size=1G ${XTC_DIR}/e*${DIR}-s*-c*.xtc | awk 'BEGIN{gb_sum=0} {gb_sum+=$5} END{printf("Number of XTC files: %d\n",NR);printf("XTC total size (Gb): %g\n",gb_sum)}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
+	if [ $RUN_ERR -eq 0 ]; then
+	    XTC_NFILES=`awk '/Number of XTC/ {print $5}' ${SUMMARY_DIR}/${DIR}_summary.txt`
+	    XTC_NPROCESSED=`wc -l ${DIR}/files.txt| awk '{print $1}'`
+	    XTC_NINPROGRESS=`awk 'BEGIN{sum=0} /inprogress/ {sum++}END{print sum}' ${DIR}/files.txt`
+	    if [ ! $XTC_NFILES -eq $XTC_NPROCESSED ]; then
+		RUN_LOG="XTC not all"
+#		echo "XTC_NFILES: $XTC_NFILES"
+#		echo "XTC_NPROCESSED: $XTC_NPROCESSED"
+	    fi
+	    if [ $XTC_NINPROGRESS -gt 0 ]; then
+		RUN_LOG="XTC inprogress"
+	    fi
+	fi
+	
+	awk -v comment="$RUN_LOG" -f run_summary_table_sorted.awk ${SUMMARY_DIR}/${DIR}_summary.txt > ${SUMMARY_DIR}/${DIR}_summary.csv; 
+	
+	cat ${SUMMARY_DIR}/${DIR}_summary.csv |sed -n '2 p' > ${SUMMARY_DIR}/${DIR}_summary_noheader.csv; 
+	chmod g+rw ${SUMMARY_DIR}/${DIR}_*
+	
+	cat ${SUMMARY_DIR}/${DIR}_summary.txt          >> ${SUMMARY_TXT_FILE}
+	cat ${SUMMARY_DIR}/${DIR}_summary_noheader.csv >> ${SUMMARY_CSV_FILE}
+	
+#    [ $VERBOSE -eq 1 ]   && echo; cat ${SUMMARY_DIR}/${DIR}_summary.txt; cat ${SUMMARY_DIR}/${DIR}_summary_noheader.csv
+	[ $VERBOSE -eq 1 ]   && cat ${SUMMARY_DIR}/${DIR}_summary_noheader.csv
+	[ ! $VERBOSE -eq 1 ] && echo "$DIR : $RUN_LOG"
+    done
+    
+    if [ -e ${SUMMARY_LATEST_CSV} ]; then
+	cp ${SUMMARY_LATEST_CSV}   ${SUMMARY_PREVIOUS_CSV}
+    fi
+    
+    if [ -e ${SUMMARY_CSV_FILE} ]; then
+	cp ${SUMMARY_CSV_FILE} ${SUMMARY_LATEST_CSV}
+    fi
+    
+    LOOP=$((LOOP+1))
+    if [ $INFINITE_LOOP -eq 1 ]; then 
+	LOOPMAX=$((LOOPMAX+1))
+#	echo "done with loop $LOOP "
+	echo "sleep for ${INFINITE_LOOP_SLEEP} seconds..."
+	sleep ${INFINITE_LOOP_SLEEP}
+    fi
+done    
+
+
+exit 1
+
+
+#--------------------
+# OLD SCRIPTS
+#-------------------
+
+
+
+#Update all the shortsummary files
+for RUN in `/bin/ls -d r0*`; do 
+    run_summary $RUN > ${RUN}/${RUN}_shortsummary.txt; 
+    awk -f run_summary_table_sorted.awk ${RUN}/${RUN}_shortsummary.txt > ${RUN}/${RUN}_shortsummary.csv; 
+    grep -v "run" ${RUN}/${RUN}_shortsummary.csv > ${RUN}/${RUN}_shortsummary_noheader.csv; 
+done
+
+#Summarize all the csv files with headers
+for RUN in `/bin/ls -d r0*`; do 
+    cat ${RUN}/${RUN}_shortsummary.csv ; 
+done > shortsummary_tmp.csv
+
+head -n 1 shortsummary_tmp.csv > shortsummary_headeronly.csv
+
+grep -v "run" shortsummary_tmp.csv > shortsummary_noheader.csv
+
+cat shortsummary_headeronly.csv > shortsummary.csv
+cat shortsummary_noheader.csv >> shortsummary.csv
+
+rm shortsummary_tmp.csv
+
+#for RUN in `/bin/ls -d r0*`; do 
+#    cat ${RUN}/${RUN}_shortsummary.csv ; 
+#done > shortsummary.csv
+
+#    run_summary $RUN > ${RUN}/${RUN}_shortsummary.txt; 
+#    awk -f run_summary_table_sorted.awk ${RUN}/${RUN}_shortsummary.txt > ${RUN}/${RUN}_shortsummary.csv; 
+#    grep -v "runnum" ${RUN}/${RUN}_shortsummary.csv > ${RUN}/${RUN}_shortsummary_noheader.csv; 
+#	tail -n 11 r0081/log.txt | head -n 1 | sed 's/,//' | awk 'BEGIN{n=0}/nFrames/{n=$2} END{print n}'
+#	run_summary $DIR > ${SUMMARY_DIR}/${DIR}_summary.txt
+#	awk -v comment="$RUN_LOG" -f run_summary_table_sorted.awk $EMPTY_FILE > ${SUMMARY_DIR}/${DIR}_summary.csv; 
+#	awk -v comment="$RUN_LOG" -f run_summary_table_sorted.awk ${SUMMARY_DIR}/${DIR}_summary.txt > ${SUMMARY_DIR}/${DIR}_summary.csv; 
+#	awk -v comment="$RUN_LOG" -f run_summary_table_sorted.awk ${SUMMARY_DIR}/${DIR}_summary.txt > ${SUMMARY_DIR}/${DIR}_summary.csv; 
+#echo "${RUN_ARRAY[@]}"
+#exit 1
+
+#exit 1
+#if [ $RUN_ALL -eq 1 ]; then
+#    RUN_LOW=1
+#    XTC_HIGHEST=`/bin/ls ../../xtc/*-s00-c00.xtc | tail -n 1 | sed 's/^.*-r//' | sed 's/-.*$//' | sed 's/^0*//'`
+#    RUN_HIGH=$((XTC_HIGHEST+0))
+#fi
