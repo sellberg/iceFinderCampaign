@@ -331,7 +331,7 @@ for i in N.arange(len(runs)):
 						temp_water_correlation.append(N.zeros(water_correlation_shape))
 					temp_water_angavg.append(N.zeros(water_angavg_shape))
 					temp_water_angavgQ.append(water_angavgQ_shape)
-					print "No water hits for r0%s, paddings zeros." % (runs[i][j])
+					print "No water hits for r0%s, padding zeros." % (runs[i][j])
 				else:
 					print "No water hits for r0%s and shape is unknown, aborting." % (runs[i][j])
 					sys.exit(1)
@@ -356,7 +356,7 @@ for i in N.arange(len(runs)):
 							excludedTemp_water_correlation.append(N.zeros(water_correlation_shape))
 						excludedTemp_water_angavg.append(N.zeros(water_angavg_shape))
 						excludedTemp_water_angavgQ.append(water_angavgQ_shape)
-						print "No excluded water hits for r0%s, paddings zeros." % (runs[i][j])
+						print "No excluded water hits for r0%s, padding zeros." % (runs[i][j])
 					else:
 						print "No excluded water hits for r0%s and shape is unknown, aborting." % (runs[i][j])
 						sys.exit(1)
@@ -364,6 +364,7 @@ for i in N.arange(len(runs)):
 				f.close()
 			else:
 				print 'file missing: ' + sorting_dir + run_dir + typeTag + '.h5'
+				sys.exit(1)
 	
 	#plot temp_angavg
 	fig = P.figure(num=None, figsize=(8, 5), dpi=100, facecolor='w', edgecolor='k')
@@ -625,5 +626,6 @@ for i in N.arange(len(runs)):
 			entry_6.create_dataset("fwhm1", data=excludedWater_fitfwhm1[i])
 			entry_6.create_dataset("fwhm2", data=excludedWater_fitfwhm2[i])
 			entry_6.create_dataset("deltaQ", data=excludedWater_fitdeltaq[i])
+print f['data'].keys()
 f.close()
 print "Successfully updated %s" % hdf5tag

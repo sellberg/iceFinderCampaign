@@ -21,6 +21,7 @@ splitValues = [i.split(',') for i in lines]
 expDescriptors = {}
 runDescriptor="RUN"
 detectorDistDescriptor="SAMPLE-DETECTOR Z (mm)"
+eventDescriptor="nfr"
 
 iceHInvAngQ={'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324, '004':3.417}
 
@@ -47,3 +48,30 @@ def get_pix_from_invAngsQ(run_tag, invAngsQ, wavelengthInAngs=nominalWavelengthI
 def get_pix_from_invAngsQ_and_detectorDist(run_tag, invAngsQ, detDist, wavelengthInAngs=nominalWavelengthInAngs):
 	temp = 2*N.arcsin(0.5*invAngsQ*wavelengthInAngs/(2*N.pi))
 	return detDist*N.tan(temp)/pixSize
+
+def get_events(run_tag):
+	return int(expDescriptors[run_tag].get(eventDescriptor))
+
+def get_type(run_tag, type_number):
+	typeDescriptor="type%d" % (type_number)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_type_below(run_tag, type_number, upper_threshold):
+	typeDescriptor="type%d < %dADUs" % (type_number, upper_threshold)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_type_above_and_below(run_tag, type_number, lower_threshold, upper_threshold):
+	typeDescriptor="%dADUs < type%d < %dADUs" % (lower_threshold, type_number, upper_threshold)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_failedFits_from_type(run_tag, type_number):
+	typeDescriptor="type%d failedFits" % (type_number)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_failedFits_from_type_above(run_tag, type_number, lower_threshold):
+	typeDescriptor="type%d failedFits > %dADUs" % (type_number, lower_threshold)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_failedFits_from_type_above_and_below(run_tag, type_number, lower_threshold, upper_threshold):
+	typeDescriptor="%dADUs < type%d failedFits < %dADUs" % (lower_threshold, type_number, upper_threshold)
+	return int(expDescriptors[run_tag].get(typeDescriptor))

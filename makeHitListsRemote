@@ -1,0 +1,32 @@
+#!/bin/bash
+# makes lists of the hits for a run
+# takes 1 input: <RUN_DIR>
+
+if [ $# -eq 1 ]
+then
+    run=`echo $1 | sed -e 's/output_//g'`
+    cd $1
+    ls LCLS*angavg.h5 | sed -e 's/-angavg.h5//g' > ~/$run'_hits-type0.txt'
+    echo "Made "$run'_hits-type0.txt'
+    ls LCLS*angavg.h5 | sed -e 's/-angavg.h5//g' > ~/$run'_hits.txt'
+    echo "Made "$run'_hits.txt'
+    ls LCLS*angavg.h5 | sed -e 's/-angavg.h5//g' > ~/$run'_strong_hits.txt'
+    echo "Made "$run'_strong_hits.txt'
+    
+    for i in {1..9}; do
+	if test -e 'type'$i; then
+	    cd 'type'$i
+	    ls LCLS*angavg.h5 | sed -e 's/-angavg.h5//g' > ~/$run'_hits-type'$i'.txt'
+	    echo "Made "$run'_hits-type'$i'.txt'
+	    ls LCLS*angavg.h5 | sed -e 's/-angavg.h5//g' >> ~/$run'_hits.txt'
+	    if [ $i -eq "1" ]; then
+		ls LCLS*angavg.h5 | sed -e 's/-angavg.h5//g' >> ~/$run'_strong_hits.txt'
+	    fi
+	    cd ../
+	fi
+    done
+    
+else
+    echo to make lists of hits: ./makeHitLists output_rXXXX
+fi
+

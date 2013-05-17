@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-# Written by J. Sellberg on 2012-01-09
-# Has the same functionality as analyzeSums-droplet_dispenser.py but for the new data format
-# Modified by J.S. on 2012-01-25 to include the thresholding analysis
-# Modified by J.S. on 2013-01-05 to include the peakfitting analysis
-# Updated by J.S. on 2013-02-27 to switch thresholding through OptionParser
+# Written by J. Sellberg on 2013-04-01
+# Has the same functionality as averageRuns-aerojet.py but for the new data from Jan 2013
+# using the CXI Feb2011-1 nozzle at 300 PSI N2 (gas), 175 PSI He (liquid), driven at 200 kHz (20 Vpp)
 
 import numpy as N
 from numpy import linalg as LA
@@ -35,32 +33,27 @@ parser.add_option("-f", "--excludefile", action="store", type="string", dest="ex
 parser.add_option("-s", "--saveexcluded", action="store_true", dest="saveExcluded", help="flag to save average of excluded hits", default=False)
 (options, args) = parser.parse_args()
 
-# regular, resorted 2012-11-18 (r0167, r0171 r0172), 2013-02-27 (r0147), 2013-03-04 (r0151)
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-nhits_water = [[12077],[3308],[10143],[15702],[3508,789,4986],[320,203,104,2279,1157,919,207],[177,127,143,191,206],[30,75]]
-nhits_ice = [[1],[7],[7],[11],[2,2,8],[51,42,22,267,129,499,140],[786,625,433,749,1705],[2865,630]]
-nevents = [[181089],[130074],[208489],[298050],[158756,62320,316507],[114978,194250,16146,309784,110923,211603,56893],[218817,166847,82800,198154,223197],[60809,213783]]
+# regular
+runs = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
+#nhits_water = [[166, 279, 178, 1582, 628, 1543, 1234, 1238], [452, 1054, 1041, 1487, 2542], [412, 438, 364, 100, 171, 96, 225, 83, 48, 252, 169, 323, 310, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
+#nhits_ice = [[0, 0, 0, 3, 4, 0, 0, 3], [1, 2, 0, 3, 3], [0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
+oldnevents = [[20111, 30633, 26921, 197046, 63811, 179230, 133414, 115540], [134509, 120648, 121893, 174011, 310714], [73828, 67206, 92611, 19743, 32708, 18402, 39955, 11670, 6798, 37989, 28012, 48348, 46672, 54121, 111866, 17966, 12967, 29348, 42683, 33433, 38800, 2156, 107000, 4375, 57549], [2928, 58383, 103888, 75020, 94569, 61638, 113293], [14000, 2702, 139053, 105357, 19294, 17119, 65695, 36383]]
 # hits with failed peak fitting (2013-02-26, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-failedFits20_water = [[832],[234],[1312],[587],[337,19,293],[12,39,3,240,124,90,20],[11,5,2,8,24],[1,6]]
+#failedFits20_water = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
 # thresholded hits below 50 ADUs
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-t50hits_water = [[4028],[536],[1305],[2032],[858,120,788],[78,64,14,545,305,498,102],[111,63,78,84,115],[6,36]]
-t50hits_ice = [[0],[4],[3],[8],[0,0,5],[4,1,5,3,5,67,18],[316,285,34,45,830],[2402,167]]
+#t50hits_water = [[16, 49, 22, 201, 83, 219, 156, 128], [434, 106, 103, 154, 261], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
+#t50hits_ice = [[0, 0, 0, 1, 0, 0, 0, 2], [1, 1, 0, 1, 2], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
 # hits with failed peak fitting (2013-03-04, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-failedFits50_water = [[52],[27],[312],[32],[4,0,8],[1,0,0,5,3,3,0],[0,0,0,0,1],[0,0]]
+#failedFits50_water = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
 # thresholded hits below 100 ADUs
-runs = [[114],[121],[118],[123],[129,130,133],[144,145,146,147,151,169,170],[167,168,171,172,173],[165,166]]
-t100hits_water = [[4493],[512],[1077],[2172],[677,158,573],[116,25,17,299,150,396,102],[64,54,62,96,86],[3,36]]
-t100hits_ice = [[0],[1],[3],[0],[0,1,1],[8,6,1,25,26,127,35],[232,189,171,254,417],[319,210]]
+#t100hits_water = [[10, 24, 10, 147, 63, 119, 94, 89], [18, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
+#t100hits_ice = [[0, 0, 0, 0, 3, 0, 0, 1], [0, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
 # hits with failed peak fitting (2013-02-28, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-failedFits100_water = [[0],[0],[15],[0],[0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0],[0,0]]
+#failedFits100_water = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
-#temperatures = [264,235,234,227,224,221,220,219]
-temperatures = [270,253,252,232,227,223,221,220]
-#temperatures = [293,256,250,232,227,223,221,220] # FINAL temperatures from LicThesis
-#distances = [1.085200,11.585200,11.985100,21.585200,30.540800,40.540800,45.540800,50.540800]
-distances = [0.668972,11.548956,12.349269,21.407288,30.603057,40.403027,45.595702,50.619378] # FINAL distances
+temperatures = [230,228,227,225,224] # 12.8 um droplets, 5.5 m/s, gamma = 0.8, 10 mm delay of cooling
+distances = [30.3599791314158,35.3687000607684,40.3787409506768,45.3885869580407,50.3988203584402] # FINAL distances
 thresholds = [20, 50, 100]
 
 # hexagonal ice peaks
@@ -71,12 +64,12 @@ HIceQLabel = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '
 HIceP = {'100':9.5, '002':8.5, '101':7.5, '102':6.2, '110':5.7, '103':5.2, '200':7., '112':6., '201':5.}
 
 # SCRATCH
-#source_dir = "/reg/d/psdm/cxi/cxi25410/scratch/cleaned_hdf5/"
-#sorting_dir = "/reg/d/psdm/cxi/cxi25410/scratch/iceFinderCampaign/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+#sorting_dir = "/reg/d/psdm/cxi/cxi74613/scratch/iceFinderCampaign/"
 # RES & FTC
-source_dir = "/reg/d/psdm/cxi/cxi25410/ftc/cleaned_hdf5/"
-#source_dir = "/reg/d/psdm/cxi/cxi25410/res/cleaned_hdf5/"
-sorting_dir = "/reg/d/psdm/cxi/cxi25410/res/iceFinderCampaign/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
+sorting_dir = "/reg/d/psdm/cxi/cxi74613/res/iceFinderCampaign/"
 
 original_dir = os.getcwd() + '/'
 run_tag = "r0144"
@@ -94,9 +87,13 @@ if (not options.exclude and options.threshold > 20):
 	options.exclude = True
 
 # statistics for hit rates
-nhits20 = [[] for i in runs]
-nhits50 = [[] for i in runs]
-nhits100 = [[] for i in runs]
+nhits_water = [[[] for j in runs] for i in thresholds]
+nhits_ice = [[[] for j in runs] for i in thresholds]
+nhits_tot = [[[] for j in runs] for i in thresholds]
+sumhits_water = [[] for i in thresholds]
+sumhits_ice = [[] for i in thresholds]
+sumhits_tot = [[] for i in thresholds]
+nevents = [[] for i in runs]
 ratio20 = [[] for i in runs]
 ratio50 = [[] for i in runs]
 ratio100 = [[] for i in runs]
@@ -107,12 +104,6 @@ ratios = [[] for i in thresholds]
 ratio_deviations = [[] for i in thresholds]
 hitrates = [[] for i in thresholds]
 hitrate_deviations = [[] for i in thresholds]
-sumhits_water = [[] for i in thresholds]
-sumhits_ice = [[] for i in thresholds]
-sumhits_tot = [[] for i in thresholds]
-runhits_water = [[[] for j in runs] for i in thresholds]
-runhits_ice = [[[] for j in runs] for i in thresholds]
-runhits_tot = [[[] for j in runs] for i in thresholds]
 len_runs = [len(i) for i in runs]
 
 #fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
@@ -125,29 +116,37 @@ P.ylabel("Ice Ratio", fontsize='x-large')
 
 for i in N.arange(len(runs)):
 	for j in N.arange(len(runs[i])):
-		nhits20[i].append(float(nhits_water[i][j] + nhits_ice[i][j]))
-		ratio20[i].append(nhits_ice[i][j]/nhits20[i][j])
-		hitrate20[i].append(nhits20[i][j]/nevents[i][j])
-		nhits50[i].append(float(nhits_water[i][j] - t50hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j]))
-		ratio50[i].append((nhits_ice[i][j] - t50hits_ice[i][j])/nhits50[i][j])
-		hitrate50[i].append(nhits50[i][j]/nevents[i][j])
-		nhits100[i].append(float(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j] + nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j]))
-		ratio100[i].append((nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j])/nhits100[i][j])
-		hitrate100[i].append(nhits100[i][j]/nevents[i][j])
-		if options.peakfit:
-			runhits_water[0][i].append(nhits_water[i][j] - failedFits20_water[i][j])
-			runhits_water[1][i].append(nhits_water[i][j] - t50hits_water[i][j] - failedFits50_water[i][j])
-			runhits_water[2][i].append(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j] - failedFits100_water[i][j])
+		if (runs[i][j] < 100):
+			run_tag = "r00%s"%(runs[i][j])
 		else:
-			runhits_water[0][i].append(nhits_water[i][j])
-			runhits_water[1][i].append(nhits_water[i][j] - t50hits_water[i][j])
-			runhits_water[2][i].append(nhits_water[i][j] - t50hits_water[i][j] - t100hits_water[i][j])
-		runhits_ice[0][i].append(nhits_ice[i][j])
-		runhits_ice[1][i].append(nhits_ice[i][j] - t50hits_ice[i][j])
-		runhits_ice[2][i].append(nhits_ice[i][j] - t50hits_ice[i][j] - t100hits_ice[i][j])
-		runhits_tot[0][i].append(runhits_water[0][i][j] + runhits_ice[0][i][j])
-		runhits_tot[1][i].append(runhits_water[1][i][j] + runhits_ice[1][i][j])
-		runhits_tot[2][i].append(runhits_water[2][i][j] + runhits_ice[2][i][j])
+			run_tag = "r0%s"%(runs[i][j])
+		if options.peakfit:
+			nhits_water[0][i].append(eDD.get_type(run_tag, 0) - eDD.get_failedFits_from_type(run_tag, 0))
+			nhits_water[1][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_failedFits_from_type_above(run_tag, 0, 50))
+			nhits_water[2][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_type_above_and_below(run_tag, 0, 50, 100) - eDD.get_failedFits_from_type_above(run_tag, 0, 100))
+		else:
+			nhits_water[0][i].append(eDD.get_type(run_tag, 0))
+			nhits_water[1][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50))
+			nhits_water[2][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_type_above_and_below(run_tag, 0, 50, 100))
+		nhits_ice[0][i].append(eDD.get_type(run_tag, 1))
+		nhits_ice[1][i].append(eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50))
+		nhits_ice[2][i].append(eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50) - eDD.get_type_above_and_below(run_tag, 1, 50, 100))
+		nhits_tot[0][i].append(float(nhits_water[0][i][j] + nhits_ice[0][i][j]))
+		nhits_tot[1][i].append(float(nhits_water[1][i][j] + nhits_ice[1][i][j]))
+		nhits_tot[2][i].append(float(nhits_water[2][i][j] + nhits_ice[2][i][j]))
+		nevents[i].append(eDD.get_events(run_tag))
+		ratio20[i].append(eDD.get_type(run_tag, 1)/nhits_tot[0][i][j])
+		hitrate20[i].append(nhits_tot[0][i][j]/nevents[i][j])
+		if nhits_tot[1][i][j]:
+			ratio50[i].append((eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50))/nhits_tot[1][i][j])
+		else:
+			ratio50[i].append(0)
+		hitrate50[i].append(nhits_tot[1][i][j]/nevents[i][j])
+		if nhits_tot[2][i][j]:
+			ratio100[i].append((eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50) - eDD.get_type_above_and_below(run_tag, 1, 50, 100))/nhits_tot[2][i][j])
+		else:
+			ratio100[i].append(0)
+		hitrate100[i].append(nhits_tot[2][i][j]/nevents[i][j])
 	
 	ratios[0].append(N.mean(ratio20[i]))
 	ratios[1].append(N.mean(ratio50[i]))
@@ -155,21 +154,36 @@ for i in N.arange(len(runs)):
 	ratio_deviations[0].append(N.std(ratio20[i]))
 	ratio_deviations[1].append(N.std(ratio50[i]))
 	ratio_deviations[2].append(N.std(ratio100[i]))
-	hitrates[0].append(sum(nhits20[i])/sum(nevents[i]))
-	hitrates[1].append(sum(nhits50[i])/sum(nevents[i]))
-	hitrates[2].append(sum(nhits100[i])/sum(nevents[i]))
+	hitrates[0].append(sum(nhits_tot[0][i])/sum(nevents[i]))
+	hitrates[1].append(sum(nhits_tot[1][i])/sum(nevents[i]))
+	hitrates[2].append(sum(nhits_tot[2][i])/sum(nevents[i]))
 	hitrate_deviations[0].append(N.std(hitrate20[i]))
 	hitrate_deviations[1].append(N.std(hitrate50[i]))
 	hitrate_deviations[2].append(N.std(hitrate100[i]))
-	sumhits_water[0].append(float(sum(nhits_water[i])))
-	sumhits_water[1].append(float(sum(nhits_water[i]) - sum(t50hits_water[i])))
-	sumhits_water[2].append(float(sum(nhits_water[i]) - sum(t50hits_water[i]) - sum(t100hits_water[i])))
-	sumhits_ice[0].append(float(sum(nhits_ice[i])))
-	sumhits_ice[1].append(float(sum(nhits_ice[i]) - sum(t50hits_ice[i])))
-	sumhits_ice[2].append(float(sum(nhits_ice[i]) - sum(t50hits_ice[i]) - sum(t100hits_ice[i])))
-	sumhits_tot[0].append(sum(nhits20[i]))
-	sumhits_tot[1].append(sum(nhits50[i]))
-	sumhits_tot[2].append(sum(nhits100[i]))
+	sumhits_water[0].append(float(sum(nhits_water[0][i])))
+	sumhits_water[1].append(float(sum(nhits_water[1][i])))
+	sumhits_water[2].append(float(sum(nhits_water[2][i])))
+	sumhits_ice[0].append(float(sum(nhits_ice[0][i])))
+	sumhits_ice[1].append(float(sum(nhits_ice[1][i])))
+	sumhits_ice[2].append(float(sum(nhits_ice[2][i])))
+	sumhits_tot[0].append(sum(nhits_tot[0][i]))
+	sumhits_tot[1].append(sum(nhits_tot[1][i]))
+	sumhits_tot[2].append(sum(nhits_tot[2][i]))
+	if (sumhits_water[0][i] < 0 or sumhits_ice[0][i] < 0 or sumhits_tot[0][i] < 0):
+		print "runs:", runs[i]
+		print "20 ADUs: sumhits_water[%d] = %d" % (i, sumhits_water[0][i])
+		print "20 ADUs: sumhits_ice[%d] = %d" % (i, sumhits_ice[0][i])
+		print "20 ADUs: sumhits_tot[%d] = %d" % (i, sumhits_tot[0][i])
+	if (sumhits_water[1][i] < 0 or sumhits_ice[1][i] < 0 or sumhits_tot[1][i] < 0):
+		print "runs:", runs[i]
+		print "50 ADUs: sumhits_water[%d] = %d" % (i, sumhits_water[1][i])
+		print "50 ADUs: sumhits_ice[%d] = %d" % (i, sumhits_ice[1][i])
+		print "50 ADUs: sumhits_tot[%d] = %d" % (i, sumhits_tot[1][i])
+	if (sumhits_water[2][i] < 0 or sumhits_ice[2][i] < 0 or sumhits_tot[2][i] < 0):
+		print "runs:", runs[i]
+		print "100 ADUs: sumhits_water[%d] = %d" % (i, sumhits_water[2][i])
+		print "100 ADUs: sumhits_ice[%d] = %d" % (i, sumhits_ice[2][i])
+		print "100 ADUs: sumhits_tot[%d] = %d" % (i, sumhits_tot[2][i])
 	
 	P.scatter(distances[i], ratios[0][i], color='r', marker='o')
 	P.scatter(distances[i], ratios[1][i], color='g', marker='o')
@@ -206,9 +220,9 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, bbox_to_anchor = (1, 1), loc='upper left')
 
-print "output_runs-ice_ratios.png saved."
-P.savefig(original_dir + "output_runs-ice_ratios.png")
-#P.savefig(original_dir + "output_runs-ice_ratios.png", format='eps')
+print "output_runs-13um-ice_ratios.png saved."
+P.savefig(original_dir + "output_runs-13um-ice_ratios.png")
+#P.savefig(original_dir + "output_runs-13um-ice_ratios.png", format='eps')
 #P.show()
 P.close()
 
@@ -227,9 +241,9 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper right')
 
-print "output_runs-ice_hits.png saved."
-P.savefig(original_dir + "output_runs-ice_hits.png")
-#P.savefig(original_dir + "output_runs-ice_hits.png", format='eps')
+print "output_runs-13um-ice_hits.png saved."
+P.savefig(original_dir + "output_runs-13um-ice_hits.png")
+#P.savefig(original_dir + "output_runs-13um-ice_hits.png", format='eps')
 #P.show()
 P.close()
 
@@ -255,16 +269,16 @@ for i in N.arange(3):
 	P.plot(distances, hitrate_deviations[i], color=colors[i], label="%s ADUs"%(thresholds[i]))
 
 handles, labels = canvas.get_legend_handles_labels()
-canvas.legend(handles, labels, loc='upper left')
+canvas.legend(handles, labels, loc='upper right')
 
-print "output_runs-ice_hitrates.png saved."
-P.savefig(original_dir + "output_runs-ice_hitrates.png")
-#P.savefig(original_dir + "output_runs-ice_ratios.png", format='eps')
+print "output_runs-13um-ice_hitrates.png saved."
+P.savefig(original_dir + "output_runs-13um-ice_hitrates.png")
+#P.savefig(original_dir + "output_runs-13um-ice_ratios.png", format='eps')
 #P.show()
 P.close()
 
 for i in N.arange(3):
-	txttag = "output_runs-ice_ratios-%sADUs.txt"%(thresholds[i])
+	txttag = "output_runs-13um-ice_ratios-%sADUs.txt"%(thresholds[i])
 	N.array([distances, len_runs, sumhits_tot[i], sumhits_water[i], sumhits_ice[i], ratios[i], ratio_deviations[i], hitrates[i], hitrate_deviations[i]]).tofile(txttag, sep = "\n", format="%lf")
 	print "%s saved."%(txttag)
 
@@ -486,10 +500,13 @@ for i in N.arange(len(runs)):
 		excludedTemp_ice_angavg = []
 		excludedTemp_ice_angavgQ = []
 	for j in N.arange(len(runs[i])):
-		run_tag = "r0%s"%(runs[i][j])
-		run_dir = 'output_' + run_tag + '/'
+		if (runs[i][j] < 100):
+			run_tag = "r00%s"%(runs[i][j])
+		else:
+			run_tag = "r0%s"%(runs[i][j])
+		run_dir =  'output_' + run_tag + '/'
 		#water
-		if (nhits_water[i][j] != 0):
+		if (eDD.get_type(run_tag, 0) != 0):
 			if options.exclude:
 				typeTag = run_tag + "_type0-" + options.excludeFile
 			else:
@@ -497,7 +514,7 @@ for i in N.arange(len(runs)):
 			if os.path.exists(sorting_dir + run_dir + typeTag + '.h5'):
 				print 'found: ' + sorting_dir + run_dir + typeTag + '.h5'
 				f = H.File(sorting_dir + run_dir + typeTag + '.h5', 'r')
-				if (runhits_water[thresholdIndex][i][j] > 0):
+				if (nhits_water[thresholdIndex][i][j] > 0):
 					temp_water_pattern.append(N.array(f['data']['diffraction']))
 					water_pattern_shape = N.array(f['data']['diffraction']).shape
 					if options.xaca:
@@ -526,7 +543,7 @@ for i in N.arange(len(runs)):
 					sys.exit(1)
 				#excluded hits
 				if (options.exclude and options.saveExcluded):
-					if ((runhits_water[0][i][j] - runhits_water[thresholdIndex][i][j]) > 0):
+					if ((nhits_water[0][i][j] - nhits_water[thresholdIndex][i][j]) > 0):
 						excludedTemp_water_pattern.append(N.array(f['data']['excludedHits']['diffraction']))
 						if options.xaca:
 							excludedTemp_water_correlation.append(N.array(f['data']['excludedHits']['correlation']))
@@ -554,8 +571,37 @@ for i in N.arange(len(runs)):
 			else:
 				print 'file missing: ' + sorting_dir + run_dir + typeTag + '.h5'
 				sys.exit(1)
+		elif (water_pattern_shape and (water_correlation_shape or not options.xaca) and water_angavg_shape and water_angavgQ_shape.any()):
+			temp_water_pattern.append(N.zeros(water_pattern_shape))
+			if options.xaca:
+				temp_water_correlation.append(N.zeros(water_correlation_shape))
+			temp_water_angavg.append(N.zeros(water_angavg_shape))
+			temp_water_angavgQ.append(water_angavgQ_shape)
+			print "No water hits for r0%s, padding zeros." % (runs[i][j])
+			if (options.exclude and options.saveExcluded):
+				excludedTemp_water_pattern.append(N.zeros(water_pattern_shape))
+				if options.xaca:
+					excludedTemp_water_correlation.append(N.zeros(water_correlation_shape))
+				excludedTemp_water_angavg.append(N.zeros(water_angavg_shape))
+				excludedTemp_water_angavgQ.append(water_angavgQ_shape)
+				print "No excluded water hits for r0%s, padding zeros." % (runs[i][j])
+		else:
+			temp_water_pattern.append(N.zeros([1764, 1764])) #cxi74613
+			if options.xaca:
+				temp_water_correlation.append(N.zeros([128, 512])) #cxi74613
+			temp_water_angavg.append(N.zeros([3491])) #cxi74613
+			temp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+			print "No excluded water hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+			if (options.exclude and options.saveExcluded):
+				excludedTemp_water_pattern.append(N.zeros([1764, 1764])) #cxi74613
+				if options.xaca:
+					excludedTemp_water_correlation.append(N.zeros([128, 512])) #cxi74613
+				excludedTemp_water_angavg.append(N.zeros([3491])) #cxi74613
+				excludedTemp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+				print "No excluded water hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+		
 		#ice
-		if (nhits_ice[i][j] != 0):
+		if (eDD.get_type(run_tag, 1) != 0):
 			if options.exclude:
 				typeTag = run_tag + "_type1-" + options.excludeFile
 			else:
@@ -563,7 +609,7 @@ for i in N.arange(len(runs)):
 			if os.path.exists(sorting_dir + run_dir + 'type1/' + typeTag + '.h5'):
 				print 'found: ' + sorting_dir + run_dir + 'type1/' + typeTag + '.h5'
 				f = H.File(sorting_dir + run_dir + 'type1/' + typeTag + '.h5', 'r')
-				if (runhits_ice[thresholdIndex][i][j] > 0):
+				if (nhits_ice[thresholdIndex][i][j] > 0):
 					temp_ice_pattern.append(N.array(f['data']['diffraction']))
 					ice_pattern_shape = N.array(f['data']['diffraction']).shape
 					if options.xaca:
@@ -585,7 +631,7 @@ for i in N.arange(len(runs)):
 					sys.exit(1)
 				#excluded hits
 				if (options.exclude and options.saveExcluded): 
-					if ((runhits_ice[0][i][j] - runhits_ice[thresholdIndex][i][j]) > 0):
+					if ((nhits_ice[0][i][j] - nhits_ice[thresholdIndex][i][j]) > 0):
 						excludedTemp_ice_pattern.append(N.array(f['data']['excludedHits']['diffraction']))
 						if options.xaca:
 							excludedTemp_ice_correlation.append(N.array(f['data']['excludedHits']['correlation']))
@@ -605,6 +651,34 @@ for i in N.arange(len(runs)):
 			else:
 				print 'file missing: ' + sorting_dir + run_dir + 'type1/' + typeTag + '.h5'
 				sys.exit(1)
+		elif (ice_pattern_shape and (ice_correlation_shape or not options.xaca) and ice_angavg_shape and ice_angavgQ_shape.any()):
+			temp_ice_pattern.append(N.zeros(ice_pattern_shape))
+			if options.xaca:
+				temp_ice_correlation.append(N.zeros(ice_correlation_shape))
+			temp_ice_angavg.append(N.zeros(ice_angavg_shape))
+			temp_ice_angavgQ.append(ice_angavgQ_shape)
+			print "No ice hits for r0%s, padding zeros." % (runs[i][j])
+			if (options.exclude and options.saveExcluded):
+				excludedTemp_ice_pattern.append(N.zeros(ice_pattern_shape))
+				if options.xaca:
+					excludedTemp_ice_correlation.append(N.zeros(ice_correlation_shape))
+				excludedTemp_ice_angavg.append(N.zeros(ice_angavg_shape))
+				excludedTemp_ice_angavgQ.append(ice_angavgQ_shape)
+				print "No excluded ice hits for r0%s, padding zeros." % (runs[i][j])
+		else:
+			temp_ice_pattern.append(N.zeros([1764, 1764])) #cxi74613
+			if options.xaca:
+				temp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
+			temp_ice_angavg.append(N.zeros([3491])) #cxi74613
+			temp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+			print "No excluded ice hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+			if (options.exclude and options.saveExcluded):
+				excludedTemp_ice_pattern.append(N.zeros([1764, 1764])) #cxi74613
+				if options.xaca:
+					excludedTemp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
+				excludedTemp_ice_angavg.append(N.zeros([3491])) #cxi74613
+				excludedTemp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+				print "No excluded ice hits for r0%s, padding zeros with standard shape." % (runs[i][j])
 	
 	
 	#plot temp_angavg
@@ -614,7 +688,7 @@ for i in N.arange(len(runs)):
 	P.xlabel("Q (Angstroms-1)")
 	P.ylabel("Average Intensity (ADUs)")
 	for j in N.arange(len(runs[i])):
-		P.plot(temp_water_angavgQ[j], temp_water_angavg[j], color=colors[j], label="r0%s"%(runs[i][j]))
+		P.plot(temp_water_angavgQ[j], temp_water_angavg[j], color=colors[j % len(colors)], label="r0%s"%(runs[i][j]))
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels)
@@ -623,7 +697,7 @@ for i in N.arange(len(runs)):
 	P.xlabel("Q (Angstroms-1)")
 	P.ylabel("Average Intensity (ADUs)")
 	for j in N.arange(len(runs[i])):
-		P.plot(temp_ice_angavgQ[j], temp_ice_angavg[j], color=colors[j], label="r0%s"%(runs[i][j]))
+		P.plot(temp_ice_angavgQ[j], temp_ice_angavg[j], color=colors[j % len(colors)], label="r0%s"%(runs[i][j]))
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels, loc='upper left')
@@ -635,24 +709,24 @@ for i in N.arange(len(runs)):
 		P.axvline(j, 0, maxAngAvg, color='k', ls='--')
 		P.text(HIceQLabel[k], labelPosition, str(k), rotation="45")
 	
-	print "output_runs-T%sK-%dADUs-angavg.png saved."%(temperatures[i],options.threshold)
-	P.savefig(original_dir + "output_runs-T%sK-%dADUs-angavg.png"%(temperatures[i],options.threshold))
-	#P.savefig(original_dir + "output_runs-T%sK-%dADUs-angavg.eps"%(temperatures[i],options.threshold), format='eps')
+	print "output_runs-T%sK-13um-%dADUs-angavg.png saved."%(temperatures[i],options.threshold)
+	P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-angavg.png"%(temperatures[i],options.threshold))
+	#P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-angavg.eps"%(temperatures[i],options.threshold), format='eps')
 	#P.show()
 	P.close()
 	
-	sumwater = float(sum(runhits_water[thresholdIndex][i]))
-	sumice = float(sum(runhits_ice[thresholdIndex][i]))
+	sumwater = float(sum(nhits_water[thresholdIndex][i]))
+	sumice = float(sum(nhits_ice[thresholdIndex][i]))
 	if (options.exclude and options.saveExcluded):
-		excludesumwater = float(sum(runhits_water[0][i]) - sum(runhits_water[thresholdIndex][i]))
-		excludesumice = float(sum(runhits_ice[0][i]) - sum(runhits_ice[thresholdIndex][i]))
+		excludesumwater = float(sum(nhits_water[0][i]) - sum(nhits_water[thresholdIndex][i]))
+		excludesumice = float(sum(nhits_ice[0][i]) - sum(nhits_ice[thresholdIndex][i]))
 	
 	for j in N.arange(len(runs[i])):
-		nwater = runhits_water[thresholdIndex][i][j]
-		nice = runhits_ice[thresholdIndex][i][j]
+		nwater = nhits_water[thresholdIndex][i][j]
+		nice = nhits_ice[thresholdIndex][i][j]
 		if (options.exclude and options.saveExcluded):
-			excludenwater = runhits_water[0][i][j] - runhits_water[thresholdIndex][i][j]
-			excludenice = runhits_ice[0][i][j] - runhits_ice[thresholdIndex][i][j]
+			excludenwater = nhits_water[0][i][j] - nhits_water[thresholdIndex][i][j]
+			excludenice = nhits_ice[0][i][j] - nhits_ice[thresholdIndex][i][j]
 		
 		if (sumwater > 0):
 			temp_water_angavg[j] *= nwater/sumwater
@@ -698,7 +772,7 @@ for i in N.arange(len(runs)):
 		if options.xaca:
 			excludedIce_correlation.append(N.array(excludedTemp_ice_correlation).sum(axis=0))	
 	
-	currImg = img_class(water_pattern[i], ice_pattern[i], [int(sumwater), int(sumice)], "output_runs-T%sK-%dADUs-pattern"%(temperatures[i],options.threshold))
+	currImg = img_class(water_pattern[i], ice_pattern[i], [int(sumwater), int(sumice)], "output_runs-T%sK-13um-%dADUs-pattern"%(temperatures[i],options.threshold))
 	currImg.draw_img_for_viewing_pattern()
 	
 	
@@ -789,9 +863,9 @@ for i in N.arange(len(runs)):
 			P.axvline(p1[4],0,max(pos2_hist),color='r')
 			water_angavgpos2.append(p1[4])
 	
-		print "output_runs-T%sK-%dADUs-peakfit_hist.png saved."%(temperatures[i],options.threshold)
-		P.savefig(original_dir + "output_runs-T%sK-%dADUs-peakfit_hist.png"%(temperatures[i],options.threshold))
-		#P.savefig(original_dir + "output_runs-T%sK-%dADUs-peakfit_hist.eps"%(temperatures[i],options.threshold), format='eps')
+		print "output_runs-T%sK-13um-%dADUs-peakfit_hist.png saved."%(temperatures[i],options.threshold)
+		P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-peakfit_hist.png"%(temperatures[i],options.threshold))
+		#P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-peakfit_hist.eps"%(temperatures[i],options.threshold), format='eps')
 		#P.show()
 		P.close()
 
@@ -815,9 +889,9 @@ for i in N.arange(len(runs)):
 		P.ylabel("S1 FWHM (A-1)")
 		P.plot(temp_water_fitpos1, temp_water_fitfwhm1, 'r.', N.median(temp_water_fitpos1), N.median(temp_water_fitfwhm1), 'kx')
 		
-		print "output_runs-T%sK-%dADUs-peakfit_corr-s1.png saved."%(temperatures[i],options.threshold)
-		P.savefig(original_dir + "output_runs-T%sK-%dADUs-peakfit_corr-s1.png"%(temperatures[i],options.threshold))
-		#P.savefig(original_dir + "output_runs-T%sK-peakfit_corr-s1.eps"%(temperatures[i],options.threshold), format='eps')
+		print "output_runs-T%sK-13um-%dADUs-peakfit_corr-s1.png saved."%(temperatures[i],options.threshold)
+		P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-peakfit_corr-s1.png"%(temperatures[i],options.threshold))
+		#P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-peakfit_corr-s1.eps"%(temperatures[i],options.threshold), format='eps')
 		#P.show()
 		P.close()
 
@@ -841,9 +915,9 @@ for i in N.arange(len(runs)):
 		P.ylabel("S1 (A-1)")
 		P.plot(temp_water_fitpos2, temp_water_fitpos1, 'r.', N.median(temp_water_fitpos2), N.median(temp_water_fitpos1), 'kx')
 		
-		print "output_runs-T%sK-%dADUs-peakfit_corr-s2.png saved."%(temperatures[i],options.threshold)
-		P.savefig(original_dir + "output_runs-T%sK-%dADUs-peakfit_corr-s2.png"%(temperatures[i],options.threshold))
-		#P.savefig(original_dir + "output_runs-T%sK-%dADUs-peakfit_corr-s2.eps"%(temperatures[i],options.threshold), format='eps')
+		print "output_runs-T%sK-13um-%dADUs-peakfit_corr-s2.png saved."%(temperatures[i],options.threshold)
+		P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-peakfit_corr-s2.png"%(temperatures[i],options.threshold))
+		#P.savefig(original_dir + "output_runs-T%sK-13um-%dADUs-peakfit_corr-s2.eps"%(temperatures[i],options.threshold), format='eps')
 		#P.show()
 		P.close()
 
@@ -866,38 +940,32 @@ handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper left', bbox_to_anchor = (1, 1))
 
 canvas = fig.add_subplot(223)
-#canvas.set_title("Ice", fontsize='x-large')
 #P.xlabel("Q (Angstroms-1)", fontsize='x-large')
 #P.ylabel("Average Intensity (ADUs/srad)", fontsize='x-large')
 canvas.set_title("Ice")
 P.xlabel("Q (Angstroms-1)")
 P.ylabel("Average Intensity (ADUs/srad)")
 for i in N.arange(len(runs)):
-	#if i > 3:
-		#P.plot(ice_angavgQ[i], ice_angavg[i], color=colors[i-4], label="T = %s K"%(temperatures[i]))
 	P.plot(ice_angavgQ[i], ice_angavg[i], color=colors[i-4], label="T = %s K"%(temperatures[i]))
 
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper left', bbox_to_anchor = (1, 1))
 
 maxAngAvg = max([ice_angavg[i].max() for i in N.arange(len(ice_angavg))])
-#maxAngAvg = max([ice_angavg[i+4].max() for i in N.arange(3)])
 numQLabels = len(HIceQ.keys())+1
 for k,j in HIceQ.iteritems():
 	labelPosition = HIcePos[k]*maxAngAvg/numQLabels
 	P.axvline(j, 0, maxAngAvg, color='k', ls='--')
 	P.text(HIceQLabel[k], labelPosition, str(k), rotation="45")
 
-print "output_runs-aerojet-all_T-angavg_Q_%dADUs.png saved." % options.threshold
-#P.savefig(original_dir + "output_runs-aerojet-ice_T-angavg_Q_%dADUs.png" % options.threshold)
-#P.savefig(original_dir + "output_runs-aerojet-ice_T-angavg_Q_%dADUs.eps" % options.threshold, format='eps')
-P.savefig(original_dir + "output_runs-aerojet-all_T-angavg_Q_%dADUs.png" % options.threshold)
-#P.savefig(original_dir + "output_runs-aerojet-all_T-angavg_Q_%dADUs.eps" % options.threshold, format='eps')
+print "output_runs-gdvn-13um-all_T-angavg_Q_%dADUs.png saved." % options.threshold
+P.savefig(original_dir + "output_runs-gdvn-13um-all_T-angavg_Q_%dADUs.png" % options.threshold)
+#P.savefig(original_dir + "output_runs-gdvn-13um-all_T-angavg_Q_%dADUs.eps" % options.threshold, format='eps')
 #P.show()
 P.close()
 
 #save to file
-hdf5tag = "output_runs-aerojet-all_T+Q_%dADUs.h5" % options.threshold
+hdf5tag = "output_runs-gdvn-13um-all_T+Q_%dADUs.h5" % options.threshold
 f = H.File(original_dir + hdf5tag, 'w')
 entry_1 = f.create_group("/data")
 for i in N.arange(len(runs)):

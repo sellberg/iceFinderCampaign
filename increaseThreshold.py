@@ -14,7 +14,7 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-r", "--run", action="store", type="string", dest="runNumber", help="run number you wish to view", metavar="rxxxx")
-parser.add_option("-T", "--threshold", action="store", type="float", dest="threshold", help="sets threshold for max intensity of angular average below which hits are automatically sorted to sub-type (default:0)", default=0)
+parser.add_option("-t", "--threshold", action="store", type="float", dest="threshold", help="sets threshold for max intensity of angular average below which hits are automatically sorted to sub-type (default:0)", default=0)
 parser.add_option("-L", "--lowerBound", action="store", type="int", dest="lowerBound", help="sets lower bound of pixels for max intensity of angular average below which hits are automatically sorted to sub-type (default:200)", default=200)
 parser.add_option("-U", "--upperBound", action="store", type="int", dest="upperBound", help="sets upper bound of pixels for max intensity of angular average below which hits are automatically sorted to sub-type (default:1150)", default=1150)
 parser.add_option("-M", "--maxIntens", action="store", type="int", dest="maxIntens", help="doesn't plot intensities above this value (default:2000)", default=2000)
@@ -254,8 +254,6 @@ for currentlyExamining in range(numTypes):
 		t1 = time.time()
 		print "Now thresholding H5 files in %s/ ..." % (dirName)
 		for fname in foundTypeFiles[currentlyExamining]:
-			if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
-				print str(fcounter) + " of " + str(numFilesInDir) + " files updated (" + str(fcounter*100/numFilesInDir) + "%)"
 			diffractionName = source_dir + runtag + "/" + re.sub("-angavg",'',fname)
 			if os.path.exists(diffractionName):
 				f = H.File(diffractionName, 'r')
@@ -298,15 +296,22 @@ for currentlyExamining in range(numTypes):
 				currImg.draw_img_for_thresholding()
 				tcounter += 1
 			else:
-				wavelengths[currentlyExamining].append(currWavelengthInAngs)
 				avgArr[currentlyExamining] += d
 				avgRawArr[currentlyExamining] += draw
 				avgRadAvg[currentlyExamining] += davg
 				typeOccurences[currentlyExamining] += 1
+			wavelengths[currentlyExamining].append(currWavelengthInAngs)
 			fcounter += 1
+			if (options.verbose and (round(((fcounter*100)%numFilesInDir)/100)==0)):
+				print str(fcounter) + " of " + str(numFilesInDir) + " files updated (" + str(fcounter*100/numFilesInDir) + "%)"
 		t2 = time.time()
 		print "Thresholded %d events in type" % (tcounter) + str(foundTypeNumbers[currentlyExamining])
-		print "Time taken for thresholding type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(t2-t1) + " s."
+		if (t2-t1 < 60):
+			print "Time taken for thresholding type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(round(t2-t1)) + " s."
+		elif (t2-t1 < 3600):
+			print "Time taken for thresholding type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
+		else:
+			print "Time taken for thresholding type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
 		if (options.verbose and len(wavelengths[currentlyExamining]) > 0):
 			print "Mean wavelength = " + str(N.mean(wavelengths[currentlyExamining])) + " A."
 			print "Relative change in wavelength = " + str(N.std(wavelengths[currentlyExamining])/N.mean(wavelengths[currentlyExamining]))
@@ -334,7 +339,7 @@ for dirName in foundTypes:
 		entry_1 = f.create_group("/data")
 		entry_1.create_dataset("diffraction", data=avgArr[storeFlag])
 		entry_1.create_dataset("rawdata", data=avgRawArr[storeFlag])
-		entry_1.create_dataset("angavg", data=avgRadAvg[storeFlag])	
+		entry_1.create_dataset("angavg", data=avgRadAvg[storeFlag])
 		f.close()
 		print "Successfuly updated %s" % (dirName +'/'+ typeTag + ".h5")
 	if (threshOccurences[storeFlag] > 0.):
