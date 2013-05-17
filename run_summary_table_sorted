@@ -23,8 +23,8 @@ LCLSEXP="cxi74613"
 LCLSEXP_DIR="/reg/d/psdm/cxi/$LCLSEXP"
 HDF5_DIR="$LCLSEXP_DIR/scratch/cleaned_hdf5"
 XTC_DIR="$LCLSEXP_DIR/xtc"
-SUMMARY_DIR="$HDF5_DIR/summary"
 SORTING_DIR="$LCLSEXP_DIR/res/iceFinderCampaign"
+SUMMARY_DIR="$SORTING_DIR/summary"
 EMPTY_FILE="$SUMMARY_DIR/empty_file"
 
 eval set -- $(getopt -n $0 -o "-aurvshi:" -- "$@")
@@ -247,10 +247,10 @@ while [ $LOOP -lt $LOOPMAX ]; do
 	RUN_LOG=""
 	RUN_ERR=0
 
-	[ -d "$DIR" ] && RUN_CHEETAHDIR_EXIST=1
-	[ -r "$DIR" ] && RUN_CHEETAHDIR_READ=1
-	[ -e "$DIR/log.txt" ] && RUN_CHEETAHLOG=1
-	[ -e "$DIR/cheetah.ini" ] && RUN_CHEETAHINI=1
+	[ -d "$HDF5_DIR/$DIR" ] && RUN_CHEETAHDIR_EXIST=1
+	[ -r "$HDF5_DIR/$DIR" ] && RUN_CHEETAHDIR_READ=1
+	[ -e "$HDF5_DIR/$DIR/log.txt" ] && RUN_CHEETAHLOG=1
+	[ -e "$HDF5_DIR/$DIR/cheetah.ini" ] && RUN_CHEETAHINI=1
 
 	if [ $RUN_CHEETAHDIR_EXIST -eq 1 -a $RUN_CHEETAHLOG -eq 1 ]; then
 	    if [ $RUN_CHEETAHDIR_READ -eq 0 ]; then
@@ -260,7 +260,7 @@ while [ $LOOP -lt $LOOPMAX ]; do
 	    if [ $RUN_CHEETAHDIR_READ -eq 1 ]; then
 		RUN_ERR=0
 		RUN_LOG="FILES IN PLACE"
-	    # It defaults to not finnished, we will change below if it has
+	    # It defaults to not finished, we will change below if it has
 	    fi
 	fi
 	if [ $RUN_CHEETAHDIR_EXIST -eq 1 -a $RUN_CHEETAHLOG -eq 0 ]; then
@@ -281,8 +281,8 @@ while [ $LOOP -lt $LOOPMAX ]; do
 	if [ $RUN_ERR -eq 0 ]; then
 #	    if [ $UPDATE -eq 1 ]; then
 #	    fi
-	    LASTLINE_GREPDATARATE=`tail -n 1 ${DIR}/log.txt | sed 's/,//' | grep 'Average data rate:'`
-	    LASTLINE_GREPNFRAMES=`tail -n 1 ${DIR}/log.txt | sed 's/,//' | grep 'nFrames:'`
+	    LASTLINE_GREPDATARATE=`tail -n 1 ${HDF5_DIR}/${DIR}/log.txt | sed 's/,//' | grep 'Average data rate:'`
+	    LASTLINE_GREPNFRAMES=`tail -n 1 ${HDF5_DIR}/${DIR}/log.txt | sed 's/,//' | grep 'nFrames:'`
 	    if [ ! -z "${LASTLINE_GREPDATARATE}" ]; then 
 		RUN_FINISHED=1
 		RUN_LOG="DONE"
@@ -293,15 +293,15 @@ while [ $LOOP -lt $LOOPMAX ]; do
 	    fi
 	    
 	    echo "$DIR : $RUN_LOG" > ${SUMMARY_DIR}/${DIR}_summary.txt
-	    grep -e "ADC" -e "hitfinder=" -e "icefinder=" -e "NAT" -e "generateDark" ${DIR}/cheetah.ini | grep -e "hit" -e "ice" -e "Dark" >> ${SUMMARY_DIR}/${DIR}_summary.txt
+	    grep -e "ADC" -e "hitfinder=" -e "icefinder=" -e "NAT" -e "generateDark" ${HDF5_DIR}/${DIR}/cheetah.ini | grep -e "hit" -e "ice" -e "Dark" >> ${SUMMARY_DIR}/${DIR}_summary.txt
 	    
 	    if [ ${RUN_FINISHED} -eq 0 ]; then
 		echo "${LASTLINE_GREPNFRAMES}" | awk '{print "Frames processed: "$2;print "Number of hits: "$4;sub(/\(/,"",$5);sub(/%\),/,"",$5);print "Average hit rate: "$5}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
-		grep -v "#" ${DIR}/${DIR}-icehits.txt | wc -l | awk '{print "nFrames in ice powder pattern: "$1}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		grep -v "#" ${HDF5_DIR}/${DIR}/${DIR}-icehits.txt | wc -l | awk '{print "nFrames in ice powder pattern: "$1}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
 	    fi
 	    
 	    if [ ${RUN_FINISHED} -eq 1 ]; then
-		tail -n 7 ${DIR}/log.txt >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		tail -n 7 ${HDF5_DIR}/${DIR}/log.txt >> ${SUMMARY_DIR}/${DIR}_summary.txt
 	    fi
 	    
 	    if [ -d "$SORTING_DIR/output_$DIR" ]; then
@@ -332,8 +332,8 @@ while [ $LOOP -lt $LOOPMAX ]; do
 	/bin/ls -l --block-size=1G ${XTC_DIR}/e*${DIR}-s*-c*.xtc | awk 'BEGIN{gb_sum=0} {gb_sum+=$5} END{printf("Number of XTC files: %d\n",NR);printf("XTC total size (Gb): %g\n",gb_sum)}' >> ${SUMMARY_DIR}/${DIR}_summary.txt
 	if [ $RUN_ERR -eq 0 ]; then
 	    XTC_NFILES=`awk '/Number of XTC/ {print $5}' ${SUMMARY_DIR}/${DIR}_summary.txt`
-	    XTC_NPROCESSED=`wc -l ${DIR}/files.txt| awk '{print $1}'`
-	    XTC_NINPROGRESS=`awk 'BEGIN{sum=0} /inprogress/ {sum++}END{print sum}' ${DIR}/files.txt`
+	    XTC_NPROCESSED=`wc -l ${HDF5_DIR}/${DIR}/files.txt| awk '{print $1}'`
+	    XTC_NINPROGRESS=`awk 'BEGIN{sum=0} /inprogress/ {sum++}END{print sum}' ${HDF5_DIR}/${DIR}/files.txt`
 	    if [ ! $XTC_NFILES -eq $XTC_NPROCESSED ]; then
 		RUN_LOG="XTC not all"
 #		echo "XTC_NFILES: $XTC_NFILES"
