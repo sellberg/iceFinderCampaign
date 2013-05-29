@@ -427,7 +427,7 @@ for currentlyExamining in range(numTypes):
 				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/60) + " min " + str((round(t2-t1))%60) + " s."
 			else:
 				print "Time taken for averaging type" + str(foundTypeNumbers[currentlyExamining]) + " = " + str(int(t2-t1)/3600) + " h " + str(int((t2-t1)%3600)/60) + " min " + str((round(t2-t1))%60) + " s."
-			if (options.verbose):
+			if (options.verbose and len(wavelengths[currentlyExamining]) > 0):
 				print "Mean wavelength = " + str(N.mean(wavelengths[currentlyExamining])) + " A."
 				print "Relative change in wavelength = " + str(N.std(wavelengths[currentlyExamining])/N.mean(wavelengths[currentlyExamining]))
 				print "max-min wavelength = " + str(N.max(wavelengths[currentlyExamining]) - N.min(wavelengths[currentlyExamining])) + " A."
@@ -582,14 +582,18 @@ for dirName in foundTypes:
 				#P.show()
 				P.close()
 		
-		elif options.peakfit:
-			fitint1[storeFlag].append([0])
-			fitpos1[storeFlag].append([0])
-			fitfwhm1[storeFlag].append([0])
-			fitint2[storeFlag].append([0])
-			fitpos2[storeFlag].append([0])
-			fitfwhm2[storeFlag].append([0])
-			fitdeltaq[storeFlag].append([0])	
+		else:
+			wavelengths[storeFlag].append([0])
+			attenuations[storeFlag].append([0])
+			avgIntensities[storeFlag].append([0])
+			maxIntensities[storeFlag].append([0])
+			if options.peakfit:
+				fitint1[storeFlag].append([0])
+				fitpos1[storeFlag].append([0])
+				fitfwhm1[storeFlag].append([0])
+				fitint2[storeFlag].append([0])
+				fitpos2[storeFlag].append([0])
+				fitfwhm2[storeFlag].append([0])
 		
 		if (options.exclude and options.saveExcluded and excludedTypeOccurences[storeFlag] > 0.):
 			excludedAvgArr[storeFlag] /= excludedTypeOccurences[storeFlag]
