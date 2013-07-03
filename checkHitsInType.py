@@ -28,7 +28,10 @@ else:
 	else:
 		write_anomaly_dir = write_dir + "type%d" % (options.type)
 		if not os.path.exists(write_anomaly_dir):
-			print "There is no directory called %s. Aborting." % (write_anomaly_dir)
+			if options.verbose:
+				print "There is no directory called %s. Aborting." % (write_anomaly_dir)
+			else:
+				print 0
 			sys.exit(1)
 	foundHits = []
 	os.chdir(write_anomaly_dir)

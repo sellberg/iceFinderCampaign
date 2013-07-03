@@ -75,3 +75,15 @@ def get_failedFits_from_type_above(run_tag, type_number, lower_threshold):
 def get_failedFits_from_type_above_and_below(run_tag, type_number, lower_threshold, upper_threshold):
 	typeDescriptor="%dADUs < type%d failedFits < %dADUs" % (lower_threshold, type_number, upper_threshold)
 	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_damagedHits_from_type(run_tag, type_number):
+	typeDescriptor="type%d damagedHits" % (type_number)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_damagedHits_from_type_above(run_tag, type_number, lower_threshold):
+	typeDescriptor="type%d damagedHits > %dADUs" % (type_number, lower_threshold)
+	return int(expDescriptors[run_tag].get(typeDescriptor))
+
+def get_damagedHits_from_type_above_and_below(run_tag, type_number, lower_threshold, upper_threshold):
+	typeDescriptor="%dADUs < type%d damagedHits < %dADUs" % (lower_threshold, type_number, upper_threshold)
+	return int(expDescriptors[run_tag].get(typeDescriptor))

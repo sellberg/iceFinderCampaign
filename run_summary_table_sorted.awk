@@ -20,9 +20,13 @@ BEGIN {
   type0=-1    #sorted water hits
   type0_below50=-1    #sorted water hits below 50 ADUs
   type0_below100=-1    #sorted water hits below 100 ADUs but above 50 ADUs
+  type0_damaged=-1    #sorted water hits that were damaged (only valid for the most current sorting)
+  type0_failed=-1    #sorted water hits where peak fit failed (only valid for the most current peak fit)
   type1=-1    #sorted ice hits
   type1_below50=-1    #sorted ice hits below 50 ADUs
   type1_below100=-1    #sorted ice hits below 100 ADUs but above 50 ADUs
+  type1_damaged=-1    #sorted ice hits that were damaged (only valid for the most current sorting)
+  type1_failed=-1    #sorted ice hits where peak fit failed (only valid for the most current peak fit)
   type2=-1    #sorted weak hits
   type3=-1    #sorted hits out-of-focus
 
@@ -46,9 +50,13 @@ BEGIN {
   if ($0~/Num.* sorted water hits: /) {             type0=$6   }
   if ($0~/Num.* sorted water.*50 ADUs:/) {          type0_below50=$9   }
   if ($0~/Num.* sorted water.*100 ADUs:/) {         type0_below100=$9   }
+  if ($0~/Num.* sorted water.*damaged:/) {          type0_damaged=$9   }
+  if ($0~/Num.* sorted water.*failed:/) {           type0_failed=$9   }
   if ($0~/Num.* sorted ice hits: /) {               type1=$6   }
   if ($0~/Num.* sorted ice.*50 ADUs:/) {            type1_below50=$9   }
   if ($0~/Num.* sorted ice.*100 ADUs:/) {           type1_below100=$9   }
+  if ($0~/Num.* sorted ice.*damaged:/) {            type1_damaged=$9   }
+  if ($0~/Num.* sorted ice.*failed:/) {             type1_failed=$9   }
   if ($0~/Num.* sorted weak hits: /) {              type2=$6   }
   if ($0~/Num.* sorted out.* hits: /) {             type3=$6   }
 }
@@ -75,8 +83,8 @@ END {
   printf(format1,"hitfADC")
   printf(format1,"hitfNAT")
   printf(format1,"hitfr")
-  printf(format1,"icef ")
-  printf(format1,"nicef ")
+  printf(format1,"icef")
+  printf(format1,"nicef")
   printf(format1,"icefADC")
   printf(format1,"icefNAT")
   printf(format1,"icefr")
@@ -88,7 +96,11 @@ END {
   printf(format1,"type1 < 50ADUs")
   printf(format1,"50ADUs < type1 < 100ADUs")
   printf(format1,"type2")
-  printf(format1e,"type3")
+  printf(format1,"type3")
+  printf(format1,"type0 damaged")
+  printf(format1,"type1 damaged")
+  printf(format1,"type0 failed")
+  printf(format1e,"type1 failed")
 
   printf("\n")
 
@@ -116,7 +128,11 @@ END {
   printf(format3,type1_below50)
   printf(format3,type1_below100)
   printf(format3,type2)
-  printf(format3e,type3)
+  printf(format3,type3)
+  printf(format3,type0_damaged)
+  printf(format3,type1_damaged)
+  printf(format3,type0_failed)
+  printf(format3e,type1_failed)
 
   printf("\n")
 }

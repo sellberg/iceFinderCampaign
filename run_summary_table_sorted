@@ -313,13 +313,33 @@ while [ $LOOP -lt $LOOPMAX ]; do
 		SORTING_NTYPE1_BELOW100=`ls $SORTING_DIR/output_$DIR/type1/below100ADUs/LCLS*angavg.h5 | wc -l`
 		SORTING_NTYPE2=`ls $SORTING_DIR/output_$DIR/type2/LCLS*angavg.h5 | wc -l`
 		SORTING_NTYPE3=`ls $SORTING_DIR/output_$DIR/type3/LCLS*angavg.h5 | wc -l`
+		if [ -e "$SORTING_DIR/output_$DIR/${DIR}_damaged_events.txt" ]; then
+		    SORTING_FILE_DAMAGED=`more $SORTING_DIR/output_$DIR/${DIR}_damaged_events.txt | wc -l | echo -n "$(($(cat)+1))"`
+		    SORTING_NTYPE1_DAMAGED=`$SORTING_DIR/checkHitsInType.py -r $(printf "%04d" $RUNNUM) -f ${DIR}_damaged_events.txt -t 1`
+		    SORTING_NTYPE0_DAMAGED=$(($SORTING_FILE_DAMAGED - $SORTING_NTYPE1_DAMAGED))
+		else
+		    SORTING_NTYPE0_DAMAGED=0
+		    SORTING_NTYPE1_DAMAGED=0
+		fi
+		if [ -e "$SORTING_DIR/output_$DIR/${DIR}_failed_fits.txt" ]; then
+		    SORTING_FILE_FAILED=`more $SORTING_DIR/output_$DIR/${DIR}_failed_fits.txt | wc -l | echo -n "$(($(cat)+1))"`
+		    SORTING_NTYPE1_FAILED=`$SORTING_DIR/checkHitsInType.py -r $(printf "%04d" $RUNNUM) -f ${DIR}_failed_fits.txt -t 1`
+		    SORTING_NTYPE0_FAILED=$(($SORTING_FILE_FAILED - $SORTING_NTYPE1_FAILED))
+		else
+		    SORTING_NTYPE0_FAILED=0
+		    SORTING_NTYPE1_FAILED=0
+		fi
 		
 		echo "Number of sorted water hits: "$SORTING_NTYPE0 >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted water hits below 50 ADUs: "$SORTING_NTYPE0_BELOW50 >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted water hits below 100 ADUs: "$SORTING_NTYPE0_BELOW100 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted water hits that were damaged: "$SORTING_NTYPE0_DAMAGED >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted water hits where fit failed: "$SORTING_NTYPE0_FAILED >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted ice hits: "$SORTING_NTYPE1 >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted ice hits below 50 ADUs: "$SORTING_NTYPE1_BELOW50 >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted ice hits below 100 ADUs: "$SORTING_NTYPE1_BELOW100 >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted ice hits that were damaged: "$SORTING_NTYPE1_DAMAGED >> ${SUMMARY_DIR}/${DIR}_summary.txt
+		echo "Number of sorted ice hits where fit failed: "$SORTING_NTYPE1_FAILED >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted weak hits: "$SORTING_NTYPE2 >> ${SUMMARY_DIR}/${DIR}_summary.txt
 		echo "Number of sorted out-of-focus hits: "$SORTING_NTYPE3 >> ${SUMMARY_DIR}/${DIR}_summary.txt
 	    fi
