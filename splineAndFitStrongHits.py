@@ -43,14 +43,14 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="
 # ensure you have the necessary read/write permissions.
 ########################################################
 # SCRATCH
-source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
-ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 # RES
 #source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
 #ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
 # FTC
-#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
-#ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+ang_avg_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 
 runtag = "r%s"%(options.runNumber)
 write_dir = options.outputDir + '_' + runtag + '/'

@@ -35,24 +35,10 @@ parser.add_option("-s", "--saveexcluded", action="store_true", dest="saveExclude
 
 # regular
 runs = [[13, 14, 15, 16], [20, 21, 22], [23, 24, 25], [27, 28, 29]]
-#nhits_water = [[166, 279, 178, 1582, 628, 1543, 1234, 1238], [452, 1054, 1041, 1487, 2542], [412, 438, 364, 100, 171, 96, 225, 83, 48, 252, 169, 323, 310, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-#nhits_ice = [[0, 0, 0, 3, 4, 0, 0, 3], [1, 2, 0, 3, 3], [0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-#nevents = [[20111, 30633, 26921, 197046, 63811, 179230, 133414, 115540], [134509, 120648, 121893, 174011, 310714], [73828, 67206, 92611, 19743, 32708, 18402, 39955, 11670, 6798, 37989, 28012, 48348, 46672, 54121, 111866, 17966, 12967, 29348, 42683, 33433, 38800, 2156, 107000, 4375, 57549], [2928, 58383, 103888, 75020, 94569, 61638, 113293], [14000, 2702, 139053, 105357, 19294, 17119, 65695, 36383]]
-# hits with failed peak fitting (2013-02-26, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-#failedFits20_water = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-# thresholded hits below 50 ADUs
-#t50hits_water = [[16, 49, 22, 201, 83, 219, 156, 128], [434, 106, 103, 154, 261], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-#t50hits_ice = [[0, 0, 0, 1, 0, 0, 0, 2], [1, 1, 0, 1, 2], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-# hits with failed peak fitting (2013-03-04, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-#failedFits50_water = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-# thresholded hits below 100 ADUs
-#t100hits_water = [[10, 24, 10, 147, 63, 119, 94, 89], [18, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-#t100hits_ice = [[0, 0, 0, 0, 3, 0, 0, 1], [0, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
-# hits with failed peak fitting (2013-02-28, p0 = [1.1E9, 1.83, 0.25, 8.5E8, 2.98, 0.2])
-#failedFits100_water = [[90, 91, 92, 93, 95, 96, 97, 98], [100, 101, 102, 103, 104], [105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136], [137, 138, 139, 140, 141, 142, 143], [145, 146, 147, 148, 149, 150, 151, 152]]
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
-temperatures = [298,243,238,235] # 8.7 um droplets, 30.5 m/s, gamma = 0.8, 10 mm delay of cooling
+#temperatures = [298,243,238,235] # 8.7 um droplets, 30.5 m/s, gamma = 0.8, 10 mm delay of cooling
+temperatures = [298,234,231,229] # 8.7 um droplets, 19.2 m/s, gamma = 1.0, 2 mm delay of cooling
 distances = [0.400029950159991,25.8792070078867,36.0411564485204,46.0943296380132] # FINAL distances
 thresholds = [20, 50, 100]
 
@@ -64,10 +50,10 @@ HIceQLabel = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '
 HIceP = {'100':9.5, '002':8.5, '101':7.5, '102':6.2, '110':5.7, '103':5.2, '200':7., '112':6., '201':5.}
 
 # SCRATCH
-source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 #sorting_dir = "/reg/d/psdm/cxi/cxi74613/scratch/iceFinderCampaign/"
 # RES & FTC
-#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 #source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
 sorting_dir = "/reg/d/psdm/cxi/cxi74613/res/iceFinderCampaign/"
 
@@ -121,16 +107,16 @@ for i in N.arange(len(runs)):
 		else:
 			run_tag = "r0%s"%(runs[i][j])
 		if options.peakfit:
-			nhits_water[0][i].append(eDD.get_type(run_tag, 0) - eDD.get_failedFits_from_type(run_tag, 0))
-			nhits_water[1][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_failedFits_from_type_above(run_tag, 0, 50))
-			nhits_water[2][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_type_above_and_below(run_tag, 0, 50, 100) - eDD.get_failedFits_from_type_above(run_tag, 0, 100))
+			nhits_water[0][i].append(eDD.get_type(run_tag, 0) - eDD.get_failedFits_from_type(run_tag, 0) - eDD.get_damagedHits_from_type(run_tag, 0))
+			nhits_water[1][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_failedFits_from_type_above(run_tag, 0, 50) - eDD.get_damagedHits_from_type_above(run_tag, 0, 50))
+			nhits_water[2][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_type_above_and_below(run_tag, 0, 50, 100) - eDD.get_failedFits_from_type_above(run_tag, 0, 100) - eDD.get_damagedHits_from_type_above(run_tag, 0, 100))
 		else:
-			nhits_water[0][i].append(eDD.get_type(run_tag, 0))
-			nhits_water[1][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50))
-			nhits_water[2][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_type_above_and_below(run_tag, 0, 50, 100))
-		nhits_ice[0][i].append(eDD.get_type(run_tag, 1))
-		nhits_ice[1][i].append(eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50))
-		nhits_ice[2][i].append(eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50) - eDD.get_type_above_and_below(run_tag, 1, 50, 100))
+			nhits_water[0][i].append(eDD.get_type(run_tag, 0) - eDD.get_damagedHits_from_type(run_tag, 0))
+			nhits_water[1][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_damagedHits_from_type_above(run_tag, 0, 50))
+			nhits_water[2][i].append(eDD.get_type(run_tag, 0) - eDD.get_type_below(run_tag, 0, 50) - eDD.get_type_above_and_below(run_tag, 0, 50, 100) - eDD.get_damagedHits_from_type_above(run_tag, 0, 100))
+		nhits_ice[0][i].append(eDD.get_type(run_tag, 1) - eDD.get_damagedHits_from_type(run_tag, 1))
+		nhits_ice[1][i].append(eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50) - eDD.get_damagedHits_from_type_above(run_tag, 1, 50))
+		nhits_ice[2][i].append(eDD.get_type(run_tag, 1) - eDD.get_type_below(run_tag, 1, 50) - eDD.get_type_above_and_below(run_tag, 1, 50, 100) - eDD.get_damagedHits_from_type_above(run_tag, 1, 100))
 		nhits_tot[0][i].append(float(nhits_water[0][i][j] + nhits_ice[0][i][j]))
 		nhits_tot[1][i].append(float(nhits_water[1][i][j] + nhits_ice[1][i][j]))
 		nhits_tot[2][i].append(float(nhits_water[2][i][j] + nhits_ice[2][i][j]))

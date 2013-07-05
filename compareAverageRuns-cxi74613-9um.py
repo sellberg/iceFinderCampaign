@@ -28,10 +28,11 @@ parser.add_option("-U", "--stwomin", action="store", type="float", dest="S2_min"
 parser.add_option("-W", "--stwomax", action="store", type="float", dest="S2_max", help="upper limit of range used for S2 peak fitting (default: 3.20 A-1)", metavar="MAX_VALUE", default=3.20)
 (options, args) = parser.parse_args()
 
-files = ["output_runs-gdvn-9um-all_T+Q_20ADUs.h5"]
-tags = ["20ADUs-all"]
+files = ["output_runs-gdvn-9um-all_T+Q_20ADUs-all.h5", "output_runs-gdvn-9um-all_T+Q_20ADUs-failedFits.h5"]
+tags = ["20ADUs-all", "20ADUs-failedFits"]
 colors = ['r','g','b','c','m','y','k']
-temperatures = [298,243,238,235] # 8.7 um droplets, 30.5 m/s, gamma = 0.8, 10 mm delay of cooling
+#temperatures = [298,243,238,235] # 8.7 um droplets, 30.5 m/s, gamma = 0.8, 10 mm delay of cooling
+temperatures = [298,234,231,229] # 8.7 um droplets, 19.2 m/s, gamma = 1.0, 2 mm delay of cooling
 distances = [0.400029950159991,25.8792070078867,36.0411564485204,46.0943296380132] # FINAL distances
 
 # reference values from supplementary material Huang_resubmitted120910_Supplementary_Notes.pdf
