@@ -229,7 +229,8 @@ class img_class (object):
 ########################################################
 
 #avgArr = N.zeros((numTypes,1760,1760)) #cxi25410
-avgArr = N.zeros((numTypes,1764,1764)) #cxi74613
+#avgArr = N.zeros((numTypes,1764,1764)) #old cxi74613
+avgArr = N.zeros((numTypes,1762,1762)) #cxi74613
 avgRawArr = N.zeros((numTypes,1480,1552))
 avgAngAvgQ = N.arange(options.min_value,options.max_value+options.delta_value,options.delta_value)
 angAvgLength = int((options.max_value-options.min_value)/options.delta_value)+1
@@ -252,6 +253,7 @@ damaged_events = [] #these are only saved for the non-excluded hits
 failed_fits = [] #these are only saved for the non-excluded hits
 if (options.exclude and options.saveExcluded):
 	#excludedAvgArr = N.zeros((numTypes,1760,1760)) #cxi25410
+	#excludedAvgArr = N.zeros((numTypes,1762,1762)) #old cxi74613
 	excludedAvgArr = N.zeros((numTypes,1764,1764)) #cxi74613
 	excludedAvgRawArr = N.zeros((numTypes,1480,1552))
 	excludedAvgAngAvg = N.zeros((numTypes,angAvgLength))

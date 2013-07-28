@@ -31,17 +31,21 @@ parser.add_option("-W", "--stwomax", action="store", type="float", dest="S2_max"
 parser.add_option("-e", "--exclude", action="store_true", dest="exclude", help="average excluded hits", default=False)
 parser.add_option("-f", "--excludefile", action="store", type="string", dest="excludeFile", help="name of txt file with hits to exlude (default: below100ADUs)", metavar="EXCLUDE_FILENAME", default="below100ADUs")
 parser.add_option("-s", "--saveexcluded", action="store_true", dest="saveExcluded", help="flag to save average of excluded hits", default=False)
-parser.add_option("-r", "--saveraw", action="store_true", dest="saveRaw", help="save 2D average of ice in raw data format", default=False)
 (options, args) = parser.parse_args()
 
 # regular
-runs = [[13, 14, 15, 16], [20, 21, 22], [23, 24, 25], [27, 28, 29]]
+# Needs to be changed by Chen Chen
+runs = [[37], [39, 40, 41], [42, 43, 44]]
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
-#temperatures = [298,243,238,235] # 8.7 um droplets, 30.5 m/s, gamma = 0.8, 10 mm delay of cooling
-temperatures = [298,234,231,229] # 8.7 um droplets, 19.2 m/s, gamma = 1.0, 2 mm delay of cooling
-distances = [0.400029950159991,25.8792070078867,36.0411564485204,46.0943296380132] # FINAL distances
+# Needs to be changed by Chen Chen
+temperatures = [298,248,232] # 8.7 um droplets, 19.2 m/s, gamma = 1.0, 2 mm delay of cooling
+# Needs to be changed by Chen Chen
+distances = [0.3, 10.3016190352124, 30.3081699153809] # FINAL distances
 thresholds = [20, 50, 100]
+# Needs to be changed by Chen Chen:
+# ALT+X query-replace-regexp
+# type '9um' and change to '15um' by pressing SPACE, press DEL to skip, CTRL+G to quit
 
 # hexagonal ice peaks
 HIceQ = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324}
@@ -207,9 +211,9 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, bbox_to_anchor = (1, 1), loc='upper left')
 
-print "output_runs-9um-ice_ratios.png saved."
-P.savefig(original_dir + "output_runs-9um-ice_ratios.png")
-#P.savefig(original_dir + "output_runs-9um-ice_ratios.png", format='eps')
+print "output_runs-15um-ice_ratios.png saved."
+P.savefig(original_dir + "output_runs-15um-ice_ratios.png")
+#P.savefig(original_dir + "output_runs-15um-ice_ratios.png", format='eps')
 #P.show()
 P.close()
 
@@ -228,9 +232,9 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper right')
 
-print "output_runs-9um-ice_hits.png saved."
-P.savefig(original_dir + "output_runs-9um-ice_hits.png")
-#P.savefig(original_dir + "output_runs-9um-ice_hits.png", format='eps')
+print "output_runs-15um-ice_hits.png saved."
+P.savefig(original_dir + "output_runs-15um-ice_hits.png")
+#P.savefig(original_dir + "output_runs-15um-ice_hits.png", format='eps')
 #P.show()
 P.close()
 
@@ -258,14 +262,14 @@ for i in N.arange(3):
 handles, labels = canvas.get_legend_handles_labels()
 canvas.legend(handles, labels, loc='upper right')
 
-print "output_runs-9um-ice_hitrates.png saved."
-P.savefig(original_dir + "output_runs-9um-ice_hitrates.png")
-#P.savefig(original_dir + "output_runs-9um-ice_ratios.png", format='eps')
+print "output_runs-15um-ice_hitrates.png saved."
+P.savefig(original_dir + "output_runs-15um-ice_hitrates.png")
+#P.savefig(original_dir + "output_runs-15um-ice_ratios.png", format='eps')
 #P.show()
 P.close()
 
 for i in N.arange(3):
-	txttag = "output_runs-9um-ice_ratios-%sADUs.txt"%(thresholds[i])
+	txttag = "output_runs-15um-ice_ratios-%sADUs.txt"%(thresholds[i])
 	N.array([distances, len_runs, sumhits_tot[i], sumhits_water[i], sumhits_ice[i], ratios[i], ratio_deviations[i], hitrates[i], hitrate_deviations[i]]).tofile(txttag, sep = "\n", format="%lf")
 	print "%s saved."%(txttag)
 
@@ -287,7 +291,6 @@ water_correlation_shape = False
 water_angavg_shape = False
 water_angavgQ_shape = N.array([False])
 ice_pattern = []
-ice_raw = []
 ice_correlation = []
 ice_angavg = []
 ice_angavgQ = []
@@ -469,7 +472,6 @@ for i in N.arange(len(runs)):
 	temp_water_fitpos2 = []
 	temp_water_fitfwhm2 = []
 	temp_ice_pattern = []
-	temp_ice_raw = []
 	temp_ice_correlation = []
 	temp_ice_angavg = []
 	temp_ice_angavgQ = []
@@ -575,14 +577,14 @@ for i in N.arange(len(runs)):
 				excludedTemp_water_angavgQ.append(water_angavgQ_shape)
 				print "No excluded water hits for r0%s, padding zeros." % (runs[i][j])
 		else:
-			temp_water_pattern.append(N.zeros([1762, 1762])) #cxi74613
+			temp_water_pattern.append(N.zeros([1764, 1764])) #cxi74613
 			if options.xaca:
 				temp_water_correlation.append(N.zeros([128, 512])) #cxi74613
 			temp_water_angavg.append(N.zeros([3491])) #cxi74613
 			temp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
 			print "No excluded water hits for r0%s, padding zeros with standard shape." % (runs[i][j])
 			if (options.exclude and options.saveExcluded):
-				excludedTemp_water_pattern.append(N.zeros([1762, 1762])) #cxi74613
+				excludedTemp_water_pattern.append(N.zeros([1764, 1764])) #cxi74613
 				if options.xaca:
 					excludedTemp_water_correlation.append(N.zeros([128, 512])) #cxi74613
 				excludedTemp_water_angavg.append(N.zeros([3491])) #cxi74613
@@ -601,7 +603,6 @@ for i in N.arange(len(runs)):
 				if (nhits_ice[thresholdIndex][i][j] > 0):
 					temp_ice_pattern.append(N.array(f['data']['diffraction']))
 					ice_pattern_shape = N.array(f['data']['diffraction']).shape
-					temp_ice_raw.append(N.array(f['data']['rawdata']))
 					if options.xaca:
 						temp_ice_correlation.append(N.array(f['data']['correlation']))
 						ice_correlation_shape = N.array(f['data']['correlation']).shape
@@ -643,7 +644,6 @@ for i in N.arange(len(runs)):
 				sys.exit(1)
 		elif (ice_pattern_shape and (ice_correlation_shape or not options.xaca) and ice_angavg_shape and ice_angavgQ_shape.any()):
 			temp_ice_pattern.append(N.zeros(ice_pattern_shape))
-			temp_ice_raw.append(N.zeros([1480, 1552]))
 			if options.xaca:
 				temp_ice_correlation.append(N.zeros(ice_correlation_shape))
 			temp_ice_angavg.append(N.zeros(ice_angavg_shape))
@@ -657,15 +657,14 @@ for i in N.arange(len(runs)):
 				excludedTemp_ice_angavgQ.append(ice_angavgQ_shape)
 				print "No excluded ice hits for r0%s, padding zeros." % (runs[i][j])
 		else:
-			temp_ice_pattern.append(N.zeros([1762, 1762])) #cxi74613
-			temp_ice_raw.append(N.zeros([1480, 1552]))
+			temp_ice_pattern.append(N.zeros([1764, 1764])) #cxi74613
 			if options.xaca:
 				temp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
 			temp_ice_angavg.append(N.zeros([3491])) #cxi74613
 			temp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
 			print "No excluded ice hits for r0%s, padding zeros with standard shape." % (runs[i][j])
 			if (options.exclude and options.saveExcluded):
-				excludedTemp_ice_pattern.append(N.zeros([1762, 1762])) #cxi74613
+				excludedTemp_ice_pattern.append(N.zeros([1764, 1764])) #cxi74613
 				if options.xaca:
 					excludedTemp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
 				excludedTemp_ice_angavg.append(N.zeros([3491])) #cxi74613
@@ -701,9 +700,9 @@ for i in N.arange(len(runs)):
 		P.axvline(j, 0, maxAngAvg, color='k', ls='--')
 		P.text(HIceQLabel[k], labelPosition, str(k), rotation="45")
 	
-	print "output_runs-T%sK-9um-%dADUs-angavg.png saved."%(temperatures[i],options.threshold)
-	P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-angavg.png"%(temperatures[i],options.threshold))
-	#P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-angavg.eps"%(temperatures[i],options.threshold), format='eps')
+	print "output_runs-T%sK-15um-%dADUs-angavg.png saved."%(temperatures[i],options.threshold)
+	P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-angavg.png"%(temperatures[i],options.threshold))
+	#P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-angavg.eps"%(temperatures[i],options.threshold), format='eps')
 	#P.show()
 	P.close()
 	
@@ -728,7 +727,6 @@ for i in N.arange(len(runs)):
 		if (sumice > 0):
 			temp_ice_angavg[j] *= nice/sumice
 			temp_ice_pattern[j] *= nice/sumice
-			temp_ice_raw[j] *= nice/sumice
 			if options.xaca:
 				temp_ice_correlation[j] *= nice/sumice
 		if (options.exclude and options.saveExcluded):
@@ -751,7 +749,6 @@ for i in N.arange(len(runs)):
 	ice_angavg.append(N.array(temp_ice_angavg).sum(axis=0))
 	ice_angavgQ.append(N.array(temp_ice_angavgQ).mean(axis=0))
 	ice_pattern.append(N.array(temp_ice_pattern).sum(axis=0))
-	ice_raw.append(N.array(temp_ice_raw).sum(axis=0))
 	if options.xaca:
 		ice_correlation.append(N.array(temp_ice_correlation).sum(axis=0))	
 	if (options.exclude and options.saveExcluded):
@@ -766,7 +763,7 @@ for i in N.arange(len(runs)):
 		if options.xaca:
 			excludedIce_correlation.append(N.array(excludedTemp_ice_correlation).sum(axis=0))	
 	
-	currImg = img_class(water_pattern[i], ice_pattern[i], [int(sumwater), int(sumice)], "output_runs-T%sK-9um-%dADUs-pattern"%(temperatures[i],options.threshold))
+	currImg = img_class(water_pattern[i], ice_pattern[i], [int(sumwater), int(sumice)], "output_runs-T%sK-15um-%dADUs-pattern"%(temperatures[i],options.threshold))
 	currImg.draw_img_for_viewing_pattern()
 	
 	
@@ -857,9 +854,9 @@ for i in N.arange(len(runs)):
 			P.axvline(p1[4],0,max(pos2_hist),color='r')
 			water_angavgpos2.append(p1[4])
 	
-		print "output_runs-T%sK-9um-%dADUs-peakfit_hist.png saved."%(temperatures[i],options.threshold)
-		P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-peakfit_hist.png"%(temperatures[i],options.threshold))
-		#P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-peakfit_hist.eps"%(temperatures[i],options.threshold), format='eps')
+		print "output_runs-T%sK-15um-%dADUs-peakfit_hist.png saved."%(temperatures[i],options.threshold)
+		P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-peakfit_hist.png"%(temperatures[i],options.threshold))
+		#P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-peakfit_hist.eps"%(temperatures[i],options.threshold), format='eps')
 		#P.show()
 		P.close()
 
@@ -883,9 +880,9 @@ for i in N.arange(len(runs)):
 		P.ylabel("S1 FWHM (A-1)")
 		P.plot(temp_water_fitpos1, temp_water_fitfwhm1, 'r.', N.median(temp_water_fitpos1), N.median(temp_water_fitfwhm1), 'kx')
 		
-		print "output_runs-T%sK-9um-%dADUs-peakfit_corr-s1.png saved."%(temperatures[i],options.threshold)
-		P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-peakfit_corr-s1.png"%(temperatures[i],options.threshold))
-		#P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-peakfit_corr-s1.eps"%(temperatures[i],options.threshold), format='eps')
+		print "output_runs-T%sK-15um-%dADUs-peakfit_corr-s1.png saved."%(temperatures[i],options.threshold)
+		P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-peakfit_corr-s1.png"%(temperatures[i],options.threshold))
+		#P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-peakfit_corr-s1.eps"%(temperatures[i],options.threshold), format='eps')
 		#P.show()
 		P.close()
 
@@ -909,9 +906,9 @@ for i in N.arange(len(runs)):
 		P.ylabel("S1 (A-1)")
 		P.plot(temp_water_fitpos2, temp_water_fitpos1, 'r.', N.median(temp_water_fitpos2), N.median(temp_water_fitpos1), 'kx')
 		
-		print "output_runs-T%sK-9um-%dADUs-peakfit_corr-s2.png saved."%(temperatures[i],options.threshold)
-		P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-peakfit_corr-s2.png"%(temperatures[i],options.threshold))
-		#P.savefig(original_dir + "output_runs-T%sK-9um-%dADUs-peakfit_corr-s2.eps"%(temperatures[i],options.threshold), format='eps')
+		print "output_runs-T%sK-15um-%dADUs-peakfit_corr-s2.png saved."%(temperatures[i],options.threshold)
+		P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-peakfit_corr-s2.png"%(temperatures[i],options.threshold))
+		#P.savefig(original_dir + "output_runs-T%sK-15um-%dADUs-peakfit_corr-s2.eps"%(temperatures[i],options.threshold), format='eps')
 		#P.show()
 		P.close()
 
@@ -952,14 +949,14 @@ for k,j in HIceQ.iteritems():
 	P.axvline(j, 0, maxAngAvg, color='k', ls='--')
 	P.text(HIceQLabel[k], labelPosition, str(k), rotation="45")
 
-print "output_runs-gdvn-9um-all_T-angavg_Q_%dADUs.png saved." % options.threshold
-P.savefig(original_dir + "output_runs-gdvn-9um-all_T-angavg_Q_%dADUs.png" % options.threshold)
-#P.savefig(original_dir + "output_runs-gdvn-9um-all_T-angavg_Q_%dADUs.eps" % options.threshold, format='eps')
+print "output_runs-gdvn-15um-all_T-angavg_Q_%dADUs.png saved." % options.threshold
+P.savefig(original_dir + "output_runs-gdvn-15um-all_T-angavg_Q_%dADUs.png" % options.threshold)
+#P.savefig(original_dir + "output_runs-gdvn-15um-all_T-angavg_Q_%dADUs.eps" % options.threshold, format='eps')
 #P.show()
 P.close()
 
 #save to file
-hdf5tag = "output_runs-gdvn-9um-all_T+Q_%dADUs.h5" % options.threshold
+hdf5tag = "output_runs-gdvn-15um-all_T+Q_%dADUs.h5" % options.threshold
 f = H.File(original_dir + hdf5tag, 'w')
 entry_1 = f.create_group("/data")
 for i in N.arange(len(runs)):
@@ -1009,12 +1006,3 @@ for i in N.arange(len(runs)):
 			entry_8.create_dataset("deltaQ", data=excludedWater_fitdeltaq[i])
 f.close()
 print "Successfully updated %s" % hdf5tag
-
-if options.saveRaw:
-	for i in N.arange(len(runs)):
-		hdf5tag = "output_runs-T%sK-9um-%dADUs-ice-raw.h5" % (temperatures[i], options.threshold)
-		f = H.File(original_dir + hdf5tag, 'w')
-		entry_1 = f.create_group("/data")
-		entry_1.create_dataset("data", data=ice_raw[i])
-		print "Successfully updated %s" % hdf5tag
-		f.close()

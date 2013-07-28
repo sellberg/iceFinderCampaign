@@ -228,7 +228,8 @@ class img_class (object):
 ########################################################
 
 #avgArr = N.zeros((numTypes,1760,1760)) #cxi25410
-avgArr = N.zeros((numTypes,1764,1764)) #cxi74613
+#avgArr = N.zeros((numTypes,1764,1764)) #old cxi74613
+avgArr = N.zeros((numTypes,1762,1762)) #cxi74613
 avgRawArr = N.zeros((numTypes,1480,1552))
 avgCorrArr = N.zeros((numTypes,options.nQ,options.nPhi))
 avgAngAvgQ = N.arange(options.min_value,options.max_value+options.delta_value,options.delta_value)
