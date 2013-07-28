@@ -140,7 +140,7 @@ else:
 
 
 #Global parameters
-colmax = 1000
+colmax = 500
 colmin = 0
 storeFlag = 0
 
@@ -196,7 +196,7 @@ class img_class (object):
 			P.draw()
 	
 	def draw_img_for_viewing(self):
-		print "Press 'p' to save PNG."
+		#print "Press 'p' to save PNG."
 		global colmax
 		global colmin
 		fig = P.figure(num=None, figsize=(13.5, 5), dpi=100, facecolor='w', edgecolor='k')
@@ -204,7 +204,10 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		self.axes = P.imshow(self.inarr, origin='lower', interpolation='nearest', vmax = colmax, vmin = colmin)
+		#cxi74613: invert X-axis to follow CXI-convention
+		if not canvas.xaxis_inverted():
+			canvas.invert_xaxis()
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
@@ -220,7 +223,11 @@ class img_class (object):
 		P.plot(self.inangavgQ, self.inangavg)
 		P.xlabel("Q (A-1)")
 		P.ylabel("I(Q) (ADUs/srad)")
-		P.show()
+		pngtag = foundTypes[storeFlag] + '/' + "%s.png" % (self.filename)
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		P.close()
+		#P.show()
 
 
 ########################################################
@@ -294,11 +301,11 @@ for currentlyExamining in range(numTypes):
 			sys.exit(1)
 
 
-print "Right-click on colorbar to set maximum scale."
-print "Left-click on colorbar to set minimum scale."
-print "Center-click on colorbar (or press 'r') to reset color scale."
-print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
-print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
+#print "Right-click on colorbar to set maximum scale."
+#print "Left-click on colorbar to set minimum scale."
+#print "Center-click on colorbar (or press 'r') to reset color scale."
+#print "Interactive controls for zooming at the bottom of figure screen (zooming..etc)."
+#print "Hit Ctl-\ or close all windows (Alt-F4) to terminate viewing program."
 
 
 storeFlag = 0

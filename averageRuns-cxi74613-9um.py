@@ -329,7 +329,7 @@ if options.peakfit:
 class img_class (object):
 	def __init__(self, inarr, inangavg, inangavg_Q, filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(run_tag)):
 		self.origarr = inarr.copy()
-		self.inarr = inarr*(inarr>0)
+		self.inarr = inarr
 		self.filename = filename
 		self.inangavg = inangavg
 		self.inangavg_Q = inangavg_Q
@@ -400,8 +400,11 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename, fontsize='x-large', fontstretch='condensed')
-		#self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = 300, vmin = 0)
+		#self.axes = P.imshow(self.inarr, origin='lower', interpolation='nearest', vmax = colmax, vmin = colmin)
+		self.axes = P.imshow(self.inarr, origin='lower', interpolation='nearest', vmax = 300, vmin = 0)
+		#cxi74613: invert X-axis to follow CXI-convention
+		if not canvas.xaxis_inverted():
+			canvas.invert_xaxis()
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		
@@ -437,8 +440,11 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title("Water (%s Hits)"%(self.inangavg_Q[0]), fontsize=22, fontname='sans-serif', fontweight='roman')
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
-		#self.axes = P.imshow(self.inarr, origin='lower', vmax = 200, vmin = 0)
+		self.axes = P.imshow(self.inarr, origin='lower', interpolation='nearest', vmax = colmax, vmin = colmin)
+		#self.axes = P.imshow(self.inarr, origin='lower', interpolation='nearest', vmax = 200, vmin = 0)
+		#cxi74613: invert X-axis to follow CXI-convention
+		if not canvas.xaxis_inverted():
+			canvas.invert_xaxis()
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		

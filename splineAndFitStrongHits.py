@@ -130,10 +130,7 @@ if options.peakfit:
 #########################################################
 class img_class (object):
 	def __init__(self, inarr, inangavg, inangavgQ , filename, meanWaveLengthInAngs=eDD.nominalWavelengthInAngs, detectorDistance=eDD.get_detector_dist_in_meters(runtag)):
-		self.inarr = inarr*(inarr>0)
-		#cxi74613: invert X-axis to follow CXI-convention
-		for i in range(len(inarr)):
-			self.inarr[i] = self.inarr[i][::-1]
+		self.inarr = inarr
 		self.filename = filename
 		self.inangavg = inangavg
 		self.inangavgQ = inangavgQ
@@ -193,7 +190,10 @@ class img_class (object):
 		cid2 = fig.canvas.mpl_connect('button_press_event', self.on_click)
 		canvas = fig.add_subplot(121)
 		canvas.set_title(self.filename)
-		self.axes = P.imshow(self.inarr, origin='lower', vmax = colmax, vmin = colmin)
+		self.axes = P.imshow(self.inarr, origin='lower', interpolation='nearest', vmax = colmax, vmin = colmin)
+		#cxi74613: invert X-axis to follow CXI-convention
+		if not canvas.xaxis_inverted():
+			canvas.invert_xaxis()
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		canvas = fig.add_subplot(122)
