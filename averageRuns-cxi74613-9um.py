@@ -532,10 +532,14 @@ for i in N.arange(len(runs)):
 						temp_water_correlation.append(N.zeros(water_correlation_shape))
 					temp_water_angavg.append(N.zeros(water_angavg_shape))
 					temp_water_angavgQ.append(water_angavgQ_shape)
-					print "No water hits for r0%s, padding zeros." % (runs[i][j])
+					print "No water hits for r%.4d, padding zeros." % (runs[i][j])
 				else:
-					print "No water hits for r0%s and shape is unknown, aborting." % (runs[i][j])
-					sys.exit(1)
+					temp_water_pattern.append(N.zeros([1762, 1762])) #cxi74613
+					if options.xaca:
+						temp_water_correlation.append(N.zeros([128, 512])) #cxi74613
+					temp_water_angavg.append(N.zeros([3491])) #cxi74613
+					temp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+					print "No water hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 				#excluded hits
 				if (options.exclude and options.saveExcluded):
 					if ((nhits_water[0][i][j] - nhits_water[thresholdIndex][i][j]) > 0):
@@ -557,11 +561,14 @@ for i in N.arange(len(runs)):
 							excludedTemp_water_correlation.append(N.zeros(water_correlation_shape))
 						excludedTemp_water_angavg.append(N.zeros(water_angavg_shape))
 						excludedTemp_water_angavgQ.append(water_angavgQ_shape)
-						print "No excluded water hits for r0%s, padding zeros." % (runs[i][j])
+						print "No excluded water hits for r%.4d, padding zeros." % (runs[i][j])
 					else:
-						print "No excluded water hits for r0%s and shape is unknown, aborting." % (runs[i][j])
-						sys.exit(1)
-				
+						excludedTemp_water_pattern.append(N.zeros([1762, 1762])) #cxi74613
+						if options.xaca:
+							excludedTemp_water_correlation.append(N.zeros([128, 512])) #cxi74613
+						excludedTemp_water_angavg.append(N.zeros([3491])) #cxi74613
+						excludedTemp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+						print "No excluded water hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 				f.close()
 			else:
 				print 'file missing: ' + sorting_dir + run_dir + typeTag + '.h5'
@@ -572,28 +579,28 @@ for i in N.arange(len(runs)):
 				temp_water_correlation.append(N.zeros(water_correlation_shape))
 			temp_water_angavg.append(N.zeros(water_angavg_shape))
 			temp_water_angavgQ.append(water_angavgQ_shape)
-			print "No water hits for r0%s, padding zeros." % (runs[i][j])
+			print "No water hits for r%.4d, padding zeros." % (runs[i][j])
 			if (options.exclude and options.saveExcluded):
 				excludedTemp_water_pattern.append(N.zeros(water_pattern_shape))
 				if options.xaca:
 					excludedTemp_water_correlation.append(N.zeros(water_correlation_shape))
 				excludedTemp_water_angavg.append(N.zeros(water_angavg_shape))
 				excludedTemp_water_angavgQ.append(water_angavgQ_shape)
-				print "No excluded water hits for r0%s, padding zeros." % (runs[i][j])
+				print "No excluded water hits for r%.4d, padding zeros." % (runs[i][j])
 		else:
 			temp_water_pattern.append(N.zeros([1762, 1762])) #cxi74613
 			if options.xaca:
 				temp_water_correlation.append(N.zeros([128, 512])) #cxi74613
 			temp_water_angavg.append(N.zeros([3491])) #cxi74613
 			temp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
-			print "No excluded water hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+			print "No water hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 			if (options.exclude and options.saveExcluded):
 				excludedTemp_water_pattern.append(N.zeros([1762, 1762])) #cxi74613
 				if options.xaca:
 					excludedTemp_water_correlation.append(N.zeros([128, 512])) #cxi74613
 				excludedTemp_water_angavg.append(N.zeros([3491])) #cxi74613
 				excludedTemp_water_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
-				print "No excluded water hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+				print "No excluded water hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 		
 		#ice
 		if (eDD.get_type(run_tag, 1) != 0):
@@ -617,14 +624,20 @@ for i in N.arange(len(runs)):
 					ice_angavgQ_shape = N.array(f['data']['angavgQ'])
 				elif (ice_pattern_shape and (ice_correlation_shape or not options.xaca) and ice_angavg_shape and ice_angavgQ_shape.any()):
 					temp_ice_pattern.append(N.zeros(ice_pattern_shape))
+					temp_ice_raw.append(N.zeros([1480, 1552]))
 					if options.xaca:
 						temp_ice_correlation.append(N.zeros(ice_correlation_shape))
 					temp_ice_angavg.append(N.zeros(ice_angavg_shape))
 					temp_ice_angavgQ.append(ice_angavgQ_shape)
-					print "No ice hits for r0%s, padding zeros." % (runs[i][j])
+					print "No ice hits for r%.4d, padding zeros." % (runs[i][j])
 				else:
-					print "No ice hits for r0%s and shape is unknown, aborting." % (runs[i][j])
-					sys.exit(1)
+					temp_ice_pattern.append(N.zeros([1762, 1762])) #cxi74613
+					temp_ice_raw.append(N.zeros([1480, 1552]))
+					if options.xaca:
+						temp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
+					temp_ice_angavg.append(N.zeros([3491])) #cxi74613
+					temp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+					print "No ice hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 				#excluded hits
 				if (options.exclude and options.saveExcluded): 
 					if ((nhits_ice[0][i][j] - nhits_ice[thresholdIndex][i][j]) > 0):
@@ -639,10 +652,14 @@ for i in N.arange(len(runs)):
 							excludedTemp_ice_correlation.append(N.zeros(ice_correlation_shape))
 						excludedTemp_ice_angavg.append(N.zeros(ice_angavg_shape))
 						excludedTemp_ice_angavgQ.append(ice_angavgQ_shape)
-						print "No excluded ice hits for r0%s, padding zeros." % (runs[i][j])
+						print "No excluded ice hits for r%.4d, padding zeros." % (runs[i][j])
 					else:
-						print "No excluded ice hits for r0%s and shape is unknown, aborting." % (runs[i][j])
-						sys.exit(1)
+						excludedTemp_ice_pattern.append(N.zeros([1762, 1762])) #cxi74613
+						if options.xaca:
+							excludedTemp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
+						excludedTemp_ice_angavg.append(N.zeros([3491])) #cxi74613
+						excludedTemp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
+						print "No excluded ice hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 				f.close()
 			else:
 				print 'file missing: ' + sorting_dir + run_dir + 'type1/' + typeTag + '.h5'
@@ -654,14 +671,14 @@ for i in N.arange(len(runs)):
 				temp_ice_correlation.append(N.zeros(ice_correlation_shape))
 			temp_ice_angavg.append(N.zeros(ice_angavg_shape))
 			temp_ice_angavgQ.append(ice_angavgQ_shape)
-			print "No ice hits for r0%s, padding zeros." % (runs[i][j])
+			print "No ice hits for r%.4d, padding zeros." % (runs[i][j])
 			if (options.exclude and options.saveExcluded):
 				excludedTemp_ice_pattern.append(N.zeros(ice_pattern_shape))
 				if options.xaca:
 					excludedTemp_ice_correlation.append(N.zeros(ice_correlation_shape))
 				excludedTemp_ice_angavg.append(N.zeros(ice_angavg_shape))
 				excludedTemp_ice_angavgQ.append(ice_angavgQ_shape)
-				print "No excluded ice hits for r0%s, padding zeros." % (runs[i][j])
+				print "No excluded ice hits for r%.4d, padding zeros." % (runs[i][j])
 		else:
 			temp_ice_pattern.append(N.zeros([1762, 1762])) #cxi74613
 			temp_ice_raw.append(N.zeros([1480, 1552]))
@@ -669,14 +686,14 @@ for i in N.arange(len(runs)):
 				temp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
 			temp_ice_angavg.append(N.zeros([3491])) #cxi74613
 			temp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
-			print "No excluded ice hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+			print "No ice hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 			if (options.exclude and options.saveExcluded):
 				excludedTemp_ice_pattern.append(N.zeros([1762, 1762])) #cxi74613
 				if options.xaca:
 					excludedTemp_ice_correlation.append(N.zeros([128, 512])) #cxi74613
 				excludedTemp_ice_angavg.append(N.zeros([3491])) #cxi74613
 				excludedTemp_ice_angavgQ.append(N.arange(0.09,3.581,0.001)) #cxi74613
-				print "No excluded ice hits for r0%s, padding zeros with standard shape." % (runs[i][j])
+				print "No excluded ice hits for r%.4d, padding zeros with standard shape." % (runs[i][j])
 	
 	
 	#plot temp_angavg
@@ -686,7 +703,7 @@ for i in N.arange(len(runs)):
 	P.xlabel("Q (Angstroms-1)")
 	P.ylabel("Average Intensity (ADUs)")
 	for j in N.arange(len(runs[i])):
-		P.plot(temp_water_angavgQ[j], temp_water_angavg[j], color=colors[j % len(colors)], label="r0%s"%(runs[i][j]))
+		P.plot(temp_water_angavgQ[j], temp_water_angavg[j], color=colors[j % len(colors)], label="r%.4d"%(runs[i][j]))
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels)
@@ -695,7 +712,7 @@ for i in N.arange(len(runs)):
 	P.xlabel("Q (Angstroms-1)")
 	P.ylabel("Average Intensity (ADUs)")
 	for j in N.arange(len(runs[i])):
-		P.plot(temp_ice_angavgQ[j], temp_ice_angavg[j], color=colors[j % len(colors)], label="r0%s"%(runs[i][j]))
+		P.plot(temp_ice_angavgQ[j], temp_ice_angavg[j], color=colors[j % len(colors)], label="r%.4d"%(runs[i][j]))
 	
 	handles, labels = canvas.get_legend_handles_labels()
 	canvas.legend(handles, labels, loc='upper left')

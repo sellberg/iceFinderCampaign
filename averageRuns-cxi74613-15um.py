@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Written by J. Sellberg on 2013-05-14
+# Written by J. Sellberg and Chen Chen on 2013-08-16
 # Has the same functionality as averageRuns-aerojet.py but for the new data from Jan 2013
-# using the HN130110-5 nozzle at 190-200 PSI N2 (gas), 480-490 PSI He (liquid), driven at 900 kHz (20 Vpp)
+# using the CXI-Feb2011-1 nozzle at 500 PSI N2 (gas), 210 PSI He (liquid), driven at 200 kHz (20 Vpp)
 
 import numpy as N
 from numpy import linalg as LA
@@ -33,7 +33,6 @@ parser.add_option("-f", "--excludefile", action="store", type="string", dest="ex
 parser.add_option("-s", "--saveexcluded", action="store_true", dest="saveExcluded", help="flag to save average of excluded hits", default=False)
 (options, args) = parser.parse_args()
 
-# regular
 # Needs to be changed by Chen Chen
 runs = [[37], [39, 40, 41], [42, 43, 44]]
 #colors = ['b','g','r','c','m','y','k']
@@ -55,10 +54,10 @@ HIceQLabel = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '
 HIceP = {'100':9.5, '002':8.5, '101':7.5, '102':6.2, '110':5.7, '103':5.2, '200':7., '112':6., '201':5.}
 
 # SCRATCH
-#source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
+source_dir = "/reg/d/psdm/cxi/cxi74613/scratch/cleaned_hdf5/"
 #sorting_dir = "/reg/d/psdm/cxi/cxi74613/scratch/iceFinderCampaign/"
 # RES & FTC
-source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
+#source_dir = "/reg/d/psdm/cxi/cxi74613/ftc/cleaned_hdf5/"
 #source_dir = "/reg/d/psdm/cxi/cxi74613/res/cleaned_hdf5/"
 sorting_dir = "/reg/d/psdm/cxi/cxi74613/res/iceFinderCampaign/"
 

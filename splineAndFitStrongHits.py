@@ -253,8 +253,8 @@ damaged_events = [] #these are only saved for the non-excluded hits
 failed_fits = [] #these are only saved for the non-excluded hits
 if (options.exclude and options.saveExcluded):
 	#excludedAvgArr = N.zeros((numTypes,1760,1760)) #cxi25410
-	#excludedAvgArr = N.zeros((numTypes,1762,1762)) #old cxi74613
-	excludedAvgArr = N.zeros((numTypes,1764,1764)) #cxi74613
+	#excludedAvgArr = N.zeros((numTypes,1764,1764)) #old cxi74613
+	excludedAvgArr = N.zeros((numTypes,1762,1762)) #cxi74613
 	excludedAvgRawArr = N.zeros((numTypes,1480,1552))
 	excludedAvgAngAvg = N.zeros((numTypes,angAvgLength))
 	if options.xaca:
