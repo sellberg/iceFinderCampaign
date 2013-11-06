@@ -25,12 +25,15 @@ nevents = [[181089],[130074],[208489],[298050],[158756,62320,316507],[114978,194
 #colors = ['b','g','r','c','m','y','k']
 colors = ['r','g','b','c','m','y','k']
 #temperatures = [293.2,255.7,250.2,232.4,226.8,223.2,221.6,220.3]
-temperatures = [293,256,250,232,227,223,222,220]
-distances = [0.668972,11.548956,12.349269,21.407288,30.603057,40.403027,45.595702,50.619378]
+temperatures = [293,256,250,232,227,223,222,220] # K
+distances = [0.668972,11.548956,12.349269,21.407288,30.603057,40.403027,45.595702,50.619378] # mm
+v = 10.345972 # m/s
+times = [i/v for i in distances] # ms
 # hexagonal ice peaks
 HIceQ = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.222, '112':3.272, '201':3.324}
 #HIcePos = {'100':10.5, '002':9.5, '101':8.5, '102':7.2, '110':9.2, '103':9.5, '200':12.5, '112':11.5, '201':10.5}
-HIcePos = {'100':10.5, '002':9.5, '101':8.5, '102':6.2, '110':6.2, '103':6.2, '200':7., '112':6., '201':5.}
+##HIcePos = {'100':10.5, '002':9.5, '101':8.5, '102':6.2, '110':6.2, '103':6.2, '200':7., '112':6., '201':5.}
+HIcePos = {'100':5, '002':4.5, '101':4, '102':3, '110':4.2, '103':4.5, '200':5.5, '112':5, '201':4.5}
 HIceQLabel = {'100':1.611, '002':1.717, '101':1.848, '102':2.353, '110':2.793, '103':3.035, '200':3.324, '112':3.374, '201':3.426}
 # for imaging class
 #HIceP = {'100':9.5, '002':8.5, '101':7.5, '102':6.2, '110':5.7, '103':5.2, '200':7., '112':6., '201':5.}
@@ -115,7 +118,7 @@ class img_class (object):
 		global HIceP
 		global colmax
 		global colmin
-		print "Press 'p' to save PNG, 'e' to save EPS."
+		#print "Press 'p' to save PNG, 'e' to save EPS."
 		
 		fig = P.figure(num=None, figsize=(6.5, 12), dpi=100, facecolor='w', edgecolor='k')
 		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_viewing)
@@ -144,9 +147,19 @@ class img_class (object):
 		P.xlim([1, 3.5])
 		canvas.set_ylim(bottom=0)
 		
-		#self.filename = self.filename + "-ice_only-angavg+pattern_20ADUs"
-		self.filename = self.filename + "-ice_only-angavg+pattern_100ADUs"
-		P.show()
+		#filename = self.filename + "-ice_only-angavg+pattern_20ADUs"
+		#filename = self.filename + "-ice_only-angavg+pattern_50ADUs"
+		filename = self.filename + "-ice_only-angavg+pattern_100ADUs"
+		
+		epstag =  "%s.eps" % (filename)
+		P.savefig(epstag, format='eps')
+		print "%s saved." % (epstag)
+		pngtag =  "%s.png" % (filename)
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		
+		#P.show()
+		P.close()
 	
 	def draw_img_for_viewing_pattern(self):
 		global HIceQ
@@ -154,7 +167,7 @@ class img_class (object):
 		global HIceP
 		global colmax
 		global colmin
-		print "Press 'p' to save PNG, 'e' to save EPS."
+		#print "Press 'p' to save PNG, 'e' to save EPS."
 		
 		fig = P.figure(num=None, figsize=(6, 5.5), dpi=100, facecolor='w', edgecolor='k')
 		cid1 = fig.canvas.mpl_connect('key_press_event', self.on_keypress_for_viewing)
@@ -166,9 +179,19 @@ class img_class (object):
 		self.colbar = P.colorbar(self.axes, pad=0.01)
 		self.orglims = self.axes.get_clim()
 		
-		#self.filename = self.filename + "-ice_only-pattern_20ADUs"
-		self.filename = self.filename + "-ice_only-pattern_100ADUs"
-		P.show()
+		#filename = self.filename + "-ice_only-pattern_20ADUs"
+		#filename = self.filename + "-ice_only-pattern_50ADUs"
+		filename = self.filename + "-ice_only-pattern_100ADUs"
+		
+		epstag =  "%s.eps" % (filename)
+		P.savefig(epstag, format='eps')
+		print "%s saved." % (epstag)
+		pngtag =  "%s.png" % (filename)
+		P.savefig(pngtag)
+		print "%s saved." % (pngtag)
+		
+		#P.show()
+		P.close()
 
 
 pattern = []
@@ -197,7 +220,8 @@ P.xlabel(r"Momentum Transfer (${\AA}^{-1}$)", fontsize='large')
 #P.ylabel("Radial Intensity (ADUs/srad)", fontsize='large')
 P.ylabel("Radial Intensity (ADUs/pixel)", fontsize='large')
 for i in range(3):
-	P.plot(angavgQ[i], angavg[i], label="T = %d K"%(temperatures[i+5]), color=colors[i])
+	#P.plot(angavgQ[i], angavg[i], label="T = %d K"%(temperatures[i+5]), color=colors[i])
+	P.plot(angavgQ[i], angavg[i], label="%.2f ms"%(times[i+5]), color=colors[i])
 #P.axis([1, 3.5, 0, 300000000])
 P.xlim([1, 3.5])
 handles, labels = canvas.get_legend_handles_labels()
@@ -214,14 +238,19 @@ for k,j in HIceQ.iteritems():
 #print "%s saved." % (original_dir + "output_runs-ice_T-ice_only-angavg_20ADUs.png")
 #P.savefig(original_dir + "output_runs-ice_T-ice_only-angavg_20ADUs.eps", format='eps')
 #print "%s saved." % (original_dir + "output_runs-ice_T-ice_only-angavg_20ADUs.eps")
+#P.savefig(original_dir + "output_runs-ice_T-ice_only-angavg_50ADUs.png")
+#print "%s saved." % (original_dir + "output_runs-ice_T-ice_only-angavg_50ADUs.png")
+#P.savefig(original_dir + "output_runs-ice_T-ice_only-angavg_50ADUs.eps", format='eps')
+#print "%s saved." % (original_dir + "output_runs-ice_T-ice_only-angavg_50ADUs.eps")
 P.savefig(original_dir + "output_runs-ice_T-ice_only-angavg_100ADUs.png")
 print "%s saved." % (original_dir + "output_runs-ice_T-ice_only-angavg_100ADUs.png")
 P.savefig(original_dir + "output_runs-ice_T-ice_only-angavg_100ADUs.eps", format='eps')
 print "%s saved." % (original_dir + "output_runs-ice_T-ice_only-angavg_100ADUs.eps")
-P.show()
+P.close()
 
 for i in range(3):
-	currImg = img_class(pattern[i], angavg[i], angavgQ[i], "output_runs-T%dK"%(temperatures[i+5]), "T = %d K"%(temperatures[i+5]))
+	#currImg = img_class(pattern[i], angavg[i], angavgQ[i], "output_runs-T%dK"%(temperatures[i+5]), "T = %d K"%(temperatures[i+5]))
+	currImg = img_class(pattern[i], angavg[i], angavgQ[i], "output_runs-T%dK"%(temperatures[i+5]), "%.2f ms"%(times[i+5]))
 	currImg.draw_img_for_viewing_pattern()
-	currImg.draw_img_for_viewing_average()
+	#currImg.draw_img_for_viewing_average()
 

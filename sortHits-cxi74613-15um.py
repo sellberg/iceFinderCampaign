@@ -23,7 +23,7 @@ parser.add_option("-r", "--remote", action="store_true", dest="remote", help="sa
 (options, args) = parser.parse_args()
 
 # Needs to be changed by Chen Chen
-runs = [[37], [39, 40, 41], [42, 43, 44]]
+runs = [[37], [39, 40, 41], [42, 43]]
 colors = ['r','g','b','c','m','y','k']
 # Needs to be changed by Chen Chen
 temperatures = [298,248,232] # 8.7 um droplets, 19.2 m/s, gamma = 1.0, 2 mm delay of cooling

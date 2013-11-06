@@ -135,9 +135,9 @@ for i in N.arange(len(runs)):
 			ratio100[i].append(0)
 		hitrate100[i].append(nhits_tot[2][i][j]/nevents[i][j])
 	
-	ratios[0].append(N.mean(ratio20[i]))
-	ratios[1].append(N.mean(ratio50[i]))
-	ratios[2].append(N.mean(ratio100[i]))
+	ratios[0].append(sum(nhits_ice[0][i])/sum(nhits_tot[0][i]))
+	ratios[1].append(sum(nhits_ice[1][i])/sum(nhits_tot[1][i]))
+	ratios[2].append(sum(nhits_ice[2][i])/sum(nhits_tot[2][i]))
 	ratio_deviations[0].append(N.std(ratio20[i]))
 	ratio_deviations[1].append(N.std(ratio50[i]))
 	ratio_deviations[2].append(N.std(ratio100[i]))

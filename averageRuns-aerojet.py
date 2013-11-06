@@ -149,9 +149,9 @@ for i in N.arange(len(runs)):
 		runhits_tot[1][i].append(runhits_water[1][i][j] + runhits_ice[1][i][j])
 		runhits_tot[2][i].append(runhits_water[2][i][j] + runhits_ice[2][i][j])
 	
-	ratios[0].append(N.mean(ratio20[i]))
-	ratios[1].append(N.mean(ratio50[i]))
-	ratios[2].append(N.mean(ratio100[i]))
+	ratios[0].append(sum(runhits_ice[0][i])/float(sum(runhits_tot[0][i])))
+	ratios[1].append(sum(runhits_ice[1][i])/float(sum(runhits_tot[1][i])))
+	ratios[2].append(sum(runhits_ice[2][i])/float(sum(runhits_tot[2][i])))
 	ratio_deviations[0].append(N.std(ratio20[i]))
 	ratio_deviations[1].append(N.std(ratio50[i]))
 	ratio_deviations[2].append(N.std(ratio100[i]))
