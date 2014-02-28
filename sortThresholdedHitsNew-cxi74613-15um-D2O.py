@@ -1,20 +1,11 @@
 #!/usr/bin/env python
 
-# Written by J. Sellberg and Chen Chen on 2013-08-16
-# Wrapper or sortHits for the new SAXS data from Jan 2013
-# using the CXI Feb2011-2 nozzle at 600 PSI N2 (gas), 800 PSI He (liquid), driven at 100 kHz (30 Vpp)
+# Written by J. Sellberg and Chen Chen on 2014-02-13
+# Wrapper or sortHits for the new data from Jan 2013
+# using the CXI Feb2011-2 nozzle with D2O at 600 PSI N2 (gas), 320 PSI He (liquid), driven at 100 kHz (30 Vpp)
 
 import numpy as N
-from numpy import linalg as LA
-import h5py as H
 import glob as G
-import matplotlib
-import matplotlib.pyplot as P
-from pylab import *
-import scipy
-import scipy.interpolate as I
-from scipy import *
-from scipy import optimize
 import sys, os, re, shutil, subprocess, time
 from optparse import OptionParser
 
@@ -23,7 +14,7 @@ parser.add_option("-r", "--remote", action="store_true", dest="remote", help="sa
 (options, args) = parser.parse_args()
 
 # Needs to be changed by Chen Chen
-runs = [[166, 167], [169, 170, 171, 172, 173], [174, 176, 177, 178, 179]]
+runs = [[180], [182, 183], [193, 194, 195, 196, 197, 198], [202, 203], [205, 206], [210, 211], [216, 217], [223, 224, 225], [227, 228, 229]]
 
 original_dir = os.getcwd() + '/'
 
@@ -34,6 +25,9 @@ for i in N.arange(len(runs)):
 			run_tag = "r00%s"%(runs[i][j])
 		else:
 			run_tag = "r0%s"%(runs[i][j])
-		run_file =  run_tag + '_strong_hits.txt'
-		os.system("./sortHits " + run_file)
+		run_file =  "output_" + run_tag + '/below300above200ADUs.txt'
+		if os.path.isfile(run_file):
+			os.system("./sortThresholdedHitsNew " + run_file)
+		else:
+			print run_file + " does not exist, skipping " + run_tag
 

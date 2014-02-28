@@ -1,0 +1,32 @@
+#!/bin/bash
+# removes duplicates and sorts the hits in the .txt file into the new cheetah format (no _csapd, including .h5)
+# takes 1 input: <FILENAME>
+
+if [ $# -eq 1 ]
+then
+    FILES=`more $1`
+    TRASH=`ls temp/* 2> /dev/null | wc -l`
+    if [ $TRASH -gt 0 ]; then
+	rm temp/*
+    fi
+
+    for f in $FILES; do
+	fn=`echo $f | sed -e 's/_cspad-angavg.h5/.h5/g'`
+	if test ! -e temp/$fn; then
+	    touch temp/$fn
+	else
+	    echo "THIS IS A DUPLICATE!!!" $f
+	fi
+    done
+
+    txtfile=`echo $1 | sed -e 's/output_//g'`
+    txtfile=`echo $txtfile | sed -e 's/\//_/g'`
+    sorted=`echo $txtfile | sed -e 's/.txt/-type0_sorted-new.txt/g'`
+    cd temp/
+    ls * > ../$sorted
+    echo "Made "$sorted
+    rm *
+else
+    echo to sort hits: ./sortHits rXXXX_hits.txt
+fi
+

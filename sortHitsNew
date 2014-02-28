@@ -1,5 +1,5 @@
 #!/bin/bash
-# removes duplicates and sorts the hits in the .txt file
+# removes duplicates and sorts the hits in the .txt file into the new cheetah format (no _csapd, including .h5)
 # takes 1 input: <FILENAME>
 
 if [ $# -eq 1 ]
@@ -11,14 +11,15 @@ then
     fi
 
     for f in $FILES; do
-	if test ! -e temp/$f; then
-	    touch temp/$f
+	fn=`echo $f | sed -e 's/_cspad/.h5/g'`
+	if test ! -e temp/$fn; then
+	    touch temp/$fn
 	else
 	    echo "THIS IS A DUPLICATE!!!" $f
 	fi
     done
 
-    sorted=`echo $1 | sed -e 's/.txt/_sorted.txt/g'`
+    sorted=`echo $1 | sed -e 's/.txt/_sorted-new.txt/g'`
     cd temp/
     ls * > ../$sorted
     echo "Made "$sorted

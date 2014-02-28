@@ -24,7 +24,7 @@ parser.add_option("-r", "--remote", action="store_true", dest="remote", help="sa
 (options, args) = parser.parse_args()
 
 # needs to be changed by Chen Chen
-runs = [[166, 167], [170, 171, 172, 173], [174, 176, 177, 178, 179]]
+runs = [[166, 167], [169, 170, 171, 172, 173], [174, 176, 177, 178, 179]]
 
 original_dir = os.getcwd() + '/'
 

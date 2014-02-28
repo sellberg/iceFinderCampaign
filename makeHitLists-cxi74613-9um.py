@@ -2,7 +2,7 @@
 
 # Written by J. Sellberg on 2013-04-08
 # Wrapper or makeHitLists and makeHitListsRemote for the new data from Jan 2013
-# using the HN130110-5 nozzle at 190-200 PSI N2 (gas), 480-490 PSI He (liquid), driven at 900 kHz (20 Vpp)
+# using the CXI Feb2011-1 nozzle at 300 PSI N2 (gas), 175 PSI He (liquid), driven at 200 kHz (20 Vpp)
 
 import numpy as N
 from numpy import linalg as LA
